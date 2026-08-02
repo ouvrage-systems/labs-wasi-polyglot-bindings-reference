@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ouvrage Lab - WASM v0 (Pure WebAssembly)</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; background: #fafafa; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; }
+        .result { font-size: 1.2rem; font-weight: bold; color: #27ae60; margin-top: 1.5rem; }
+        .explanation { font-size: 0.9rem; color: #7f8c8d; line-height: 1.6; margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WASM v0: Pure WebAssembly (Browser 2017)</h1>
+        <p>This test demonstrates the execution of pure WebAssembly in the browser, without any WASI layer (no simulated OS).</p>
+        
+        <div id="output" class="result">Loading WASM module...</div>
+
+        <div class="explanation">
+            <strong>How it works:</strong><br/>
+            The HTML file contains no WebAssembly loading boilerplate or import mocks. It simply imports the clean public facade function <code>add</code> from our decoupled universal submodule. The asynchronous binary loading and the required Go system hooks are encapsulated transparently.
+        </div>
+    </div>
+
+    <script type="module">
+        // Clean import of the decoupled public API facade
+        import { add } from './my_lib/index.js';
+
+        try {
+            // Call the asynchronous facade function
+            const result = await add(15, 35);
+            document.getElementById('output').innerText = `add(15, 35) = ${result} (calculated in Go WASM v0)`;
+        } catch (err) {
+            document.getElementById('output').innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
+            console.error(err);
+        }
+    </script>
+</body>
+</html>

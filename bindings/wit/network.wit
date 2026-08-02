@@ -1,0 +1,9 @@
+package ouvrage:lab-wasi-demo;
+
+interface host-http {
+    fetch-url: func(url: string) -> result<string, string>;
+}
+
+interface network {
+    fetch-and-format: func(url: string) -> result<string, string>;
+}

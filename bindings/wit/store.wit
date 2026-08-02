@@ -1,0 +1,10 @@
+package ouvrage:lab-wasi-demo;
+
+interface store {
+    resource kv-store {
+        constructor();
+        set: func(key: string, value: string);
+        get: func(key: string) -> option<string>;
+        delete: func(key: string) -> bool;
+    }
+}

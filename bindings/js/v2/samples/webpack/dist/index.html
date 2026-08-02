@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ouvrage Lab - WASI V2 Webpack Sample</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; background: #fafafa; color: #333; }
+        .container { max-width: 650px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; }
+        .result-list { line-height: 2; margin-top: 1.5rem; }
+        .explanation { font-size: 0.9rem; color: #7f8c8d; line-height: 1.6; margin-top: 2rem; }
+    </style>
+<script type="module" src="bundle.js"></script></head>
+<body>
+    <div class="container">
+        <h1>WASI v2: Webpack Bundler Integration</h1>
+        <p>This sample demonstrates how to configure and build our WASM Component library using Webpack 5 with manual module resolution fallbacks.</p>
+        
+        <div id="output">Loading and compiling via Webpack...</div>
+
+        <div class="explanation">
+            <strong>How it works:</strong><br/>
+            Webpack resolves the local dependency <code>my-lib-v2</code>. It handles the WebAssembly assets and mocks the Node-specific shims (like <code>fs</code> and <code>os</code>) using the <code>fallback</code> configuration in <code>webpack.config.js</code>.
+        </div>
+    </div>
+</body>
+</html>

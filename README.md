@@ -1,93 +1,89 @@
-# wasi-polyglot-bindings-reference
+# WASI Polyglot Bindings Reference Implementation
+**Repository:** `wasi-polyglot-bindings-reference`
 
+---
 
+## 1. Overview
+This repository serves as the **official reference implementation** for polyglot WebAssembly bindings (Python & Node.js) in the Ouvrage ecosystem. It demonstrates how to cross-compile a Go library to WebAssembly and execute it natively in-process inside host scripting environments using:
 
-## Getting started
+1.  **WASI Preview 1 (v1)**: Execution using standard streams (Stdin/Stdout redirection) and a multiplexed JSON-RPC dispatcher. Highly portable and zero-dependency, implemented for both **Python** and **Node.js**.
+2.  **WASI Preview 2 (v2)**: High-performance execution using the **WASM Component Model**, defined via WIT (WebAssembly Interface Types) contracts. Arguments are passed natively through CPU registers/memory stack with zero I/O overhead. Implemented for **Python (CPython 3.12)**.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+---
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## 2. Directory Structure
 
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+```text
+wasi-polyglot-bindings-reference/
+  ├── Makefile                <-- Automation for setup, build and execution
+  ├── go.mod                  <-- Standalone Go module configuration
+  ├── README.md               <-- This documentation
+  │
+  ├── cmd/
+  │    └── wasi-ref-cli/      <-- Native Go CLI runner (tests packages natively)
+  │
+  ├── pkg/
+  │    ├── geometry/          <-- Math calculations on shapes (Point, Rectangle, etc.)
+  │    ├── store/             <-- Stateful in-memory Key-Value store
+  │    └── text/              <-- Pure text formatting functions
+  │
+  └── bindings/
+       ├── wit/
+       │    └── world.wit     <-- WIT API contract (ouvrage:lab-wasi-demo)
+       │
+       ├── wasm/
+       │    ├── main.go       <-- Go entrypoint for WASI Preview 1 (JSON-RPC)
+       │    ├── main_v2.go    <-- Go entrypoint for WASI Preview 2 WIT exports
+       │    └── gen/          <-- Generated TinyGo bindings (compiled by TinyGo)
+       │
+       ├── py/
+       │    ├── v1/           <-- Python WASI Preview 1 package (using pytest)
+       │    └── v2/           <-- Python WASI Preview 2 Component package (using pytest)
+       │
+       └── node/
+            └── v1/           <-- Node.js WASI Preview 1 package (using node --test)
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/ouvrage-systems/labs/wasi-polyglot-bindings-reference.git
-git branch -M main
-git push -uf origin main
+
+---
+
+## 3. Quick Start (Automation)
+
+The repository provides a self-contained `Makefile` that automatically downloads version-pinned WebAssembly compiler tools (`tinygo`, `wit-bindgen`, `wasm-tools`) locally to `./bin/` to prevent polluting your global system packages.
+
+### Step 1: Install local WASM Toolchain
+```bash
+make setup
 ```
+*Downloads TinyGo, wasm-tools, wit-bindgen, and the WASI Preview 2 reactor adapter.*
 
-## Integrate with your tools
+### Step 2: Compile all WASM Binaries
+```bash
+make build
+```
+*Compiles the Go packages for both v1 and v2, embeds WIT metadata, and builds the WASM binaries inside both Python and Node.js package subdirectories.*
 
-* [Set up project integrations](https://gitlab.com/ouvrage-systems/labs/wasi-polyglot-bindings-reference/-/settings/integrations)
+### Step 3: Run the Test Suites
 
-## Collaborate with your team
+#### 1. Python Preview 1 (JSON-RPC)
+```bash
+make run-py-v1
+```
+*Runs the Python Preview 1 pytest unit tests.*
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+#### 2. Python Preview 2 (Component Model)
+```bash
+make run-py-v2
+```
+*Runs the Python Preview 2 component model pytest unit tests.*
 
-## Test and Deploy
+#### 3. Node.js Preview 1 (JSON-RPC)
+```bash
+make run-node-v1
+```
+*Runs the Node.js native unit tests using `node --test`.*
 
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+#### 4. Native Go CLI
+```bash
+GOWORK=off go run ./cmd/wasi-ref-cli
+```
+*Runs the packages natively on your CPU, proving the Go code executes cleanly without WASM.*

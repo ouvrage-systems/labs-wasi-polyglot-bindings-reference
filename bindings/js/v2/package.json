@@ -1,0 +1,13 @@
+{
+  "name": "my-lib-v2",
+  "version": "0.1.0",
+  "description": "Node.js WASI Preview 2 Component Model bindings reference implementation",
+  "main": "my_lib/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@bytecodealliance/preview2-shim": "^0.19.0"
+  }
+}

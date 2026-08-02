@@ -1,0 +1,1103 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A new project generated from the default template project.">
+      
+      
+        <meta name="author" content="gpineda-dev">
+      
+      
+      
+        <link rel="prev" href="../python-host/">
+      
+      
+        <link rel="next" href="../troubleshooting/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.52">
+    
+    
+      
+        <title>Toolchain & Compilation Workflow - ouvrage:lab-wasi-demo</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.8b3b5a67.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#toolchain-compilation-workflow" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="./.." title="ouvrage:lab-wasi-demo" class="md-header__button md-logo" aria-label="ouvrage:lab-wasi-demo" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ouvrage:lab-wasi-demo
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Toolchain &amp; Compilation Workflow
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://gitlab.com/ouvrage-systems/labs/wasi-polyglot-bindings-reference" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ouvrage-systems/labs/wasi-polyglot-bindings-reference
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="ouvrage:lab-wasi-demo" class="md-nav__button md-logo" aria-label="ouvrage:lab-wasi-demo" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    ouvrage:lab-wasi-demo
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://gitlab.com/ouvrage-systems/labs/wasi-polyglot-bindings-reference" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ouvrage-systems/labs/wasi-polyglot-bindings-reference
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  WASI Polyglot Bindings Reference Lab
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../foundations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  WASM &amp; WASI: The Big Picture
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../go-and-wit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Go Core &amp; The WIT Contract
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ipc-dilemma/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The IPC Dilemma: Stdio vs. In-Process
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../js-host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  JavaScript Host Integration &amp; Bundlers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../live-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Live WASI V2 Browser Demo
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python-host/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Python Host Integration
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Toolchain &amp; Compilation Workflow
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Toolchain &amp; Compilation Workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-toolchain-prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Toolchain Prerequisites
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Toolchain Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#granular-unit-toolchain-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        📥 Granular &amp; Unit Toolchain Installation
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-compilation-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Compilation Workflows
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Compilation Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-v0-compilation-pure-browser-wasm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A. V0 Compilation (Pure Browser WASM)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-v1-compilation-posix-wasi-preview-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        B. V1 Compilation (POSIX WASI Preview 1)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-v2-compilation-component-model-wasi-preview-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        C. V2 Compilation (Component Model WASI Preview 2)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-customizing-the-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Customizing the Contract
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Customizing the Contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-update-the-wit-specification-v2-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 1: Update the WIT Specification (V2 Only)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-update-the-go-implementations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 2: Update the Go Implementations
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-recompile-and-verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 3: Recompile and Verify
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Developer Tips &amp; Troubleshooting
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wasi-networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  WASI Sockets &amp; Outbound HTTP Networking
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-toolchain-prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Toolchain Prerequisites
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Toolchain Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#granular-unit-toolchain-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        📥 Granular &amp; Unit Toolchain Installation
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-compilation-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Compilation Workflows
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Compilation Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-v0-compilation-pure-browser-wasm" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A. V0 Compilation (Pure Browser WASM)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-v1-compilation-posix-wasi-preview-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        B. V1 Compilation (POSIX WASI Preview 1)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-v2-compilation-component-model-wasi-preview-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        C. V2 Compilation (Component Model WASI Preview 2)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-customizing-the-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Customizing the Contract
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Customizing the Contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-update-the-wit-specification-v2-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 1: Update the WIT Specification (V2 Only)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-update-the-go-implementations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 2: Update the Go Implementations
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-recompile-and-verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 3: Recompile and Verify
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="toolchain-compilation-workflow">Toolchain &amp; Compilation Workflow<a class="headerlink" href="#toolchain-compilation-workflow" title="Permanent link">&para;</a></h1>
+<p>Compiling high-level Go code into WASI Preview 2 Components involves a multi-step compilation toolchain. This guide details the toolchain prerequisites, the compilation steps, and the automation configured in our <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/Makefile"><code>Makefile</code></a>.</p>
+<hr />
+<h2 id="1-toolchain-prerequisites">1. Toolchain Prerequisites<a class="headerlink" href="#1-toolchain-prerequisites" title="Permanent link">&para;</a></h2>
+<p>Because WASI Preview 2 is a modern ecosystem, standard compilation toolchains require specific versions. To prevent system-level dependency conflicts, our setup installs toolchain binaries locally inside the <code>bin/</code> folder of this repository:</p>
+<ul>
+<li><strong>TinyGo (v0.31.2)</strong>: Used for compiling Go code. TinyGo is required instead of standard Go because it produces much smaller WASM binaries and natively supports compiling reactor modules without garbage collection overhead.</li>
+<li><strong>wit-bindgen (v0.24.0)</strong>: Generates the low-level translation layers in Go, Python, and JS from the WIT interface description.</li>
+<li><strong>wasm-tools (v1.200.0)</strong>: Used to embed WIT metadata into the compiled WASM binary and translate the WASI Preview 1 binary into a WASI Preview 2 Component.</li>
+<li><strong>Local Node.js (v22.12.0)</strong>: Bundled in <code>bin/node/</code> to execute <code>jco</code> transpilation steps and run unit tests.</li>
+</ul>
+<p>To boot the environment and download all tools locally, run:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>make<span class="w"> </span>setup
+</span></code></pre></div></p>
+<p>Under the hood, this Makefile target delegates to the centralized bootstrap script <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/tools/bootstrap-wasi.sh"><code>tools/bootstrap-wasi.sh</code></a>.</p>
+<h3 id="granular-unit-toolchain-installation">📥 Granular &amp; Unit Toolchain Installation<a class="headerlink" href="#granular-unit-toolchain-installation" title="Permanent link">&para;</a></h3>
+<p>To allow other repositories (like <a href="file:///home/gpineda/Documents/ouvrage/ouvrage-kern-go"><code>ouvrage-kern-go</code></a>) to reuse this toolchain setup without pulling in heavy, unnecessary runtimes like Node.js, the bootstrap script supports granular installation flags:</p>
+<ul>
+<li><code>--dir &lt;path&gt;</code>: Specifies the output directory for binaries (defaults to <code>./bin</code>).</li>
+<li><code>--tinygo</code>: Installs only TinyGo.</li>
+<li><code>--wit-bindgen</code>: Installs only the <code>wit-bindgen</code> CLI tool.</li>
+<li><code>--wasm-tools</code>: Installs only the <code>wasm-tools</code> CLI tool.</li>
+<li><code>--adapter</code>: Installs only the WASI <code>wasi_snapshot_preview1.wasm</code> reactor adapter.</li>
+<li><code>--node</code>: Installs only the Node.js runtime environment.</li>
+<li><code>--all</code> (default): Installs all five components.</li>
+</ul>
+<p>For example, a purely Go-focused project can bootstrap its WASM compiler setup instantly using a single curl command while skipping Node.js:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-sSfL<span class="w"> </span>https://gitlab.com/ouvrage-systems/labs/wasi-polyglot-bindings-reference/-/raw/main/tools/bootstrap-wasi.sh<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span>--dir<span class="w"> </span>./bin<span class="w"> </span>--tinygo<span class="w"> </span>--wit-bindgen<span class="w"> </span>--wasm-tools<span class="w"> </span>--adapter
+</span></code></pre></div></p>
+<hr />
+<h2 id="2-compilation-workflows">2. Compilation Workflows<a class="headerlink" href="#2-compilation-workflows" title="Permanent link">&para;</a></h2>
+<p>Our <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/Makefile"><code>Makefile</code></a> automates three separate targets representing the evolution of WebAssembly:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>  [v0: Pure WASM]  ──&gt; TinyGo (-target=wasm) ──────────────────────────&gt; my_lib_v0.wasm
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  [v1: wasip1]     ──&gt; Go Compiler (GOOS=wasip1 GOARCH=wasm) ─────────&gt; my_lib.wasm
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  [v2: wasip2]     ──&gt; wit-bindgen ──&gt; TinyGo ──&gt; wasm-tools ──&gt; jco ──&gt; ESM Component
+</span></code></pre></div>
+<h3 id="a-v0-compilation-pure-browser-wasm">A. V0 Compilation (Pure Browser WASM)<a class="headerlink" href="#a-v0-compilation-pure-browser-wasm" title="Permanent link">&para;</a></h3>
+<p>Compiles a stateless arithmetic Go package to browser-compatible WebAssembly MVP.
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tinygo<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bindings/js/v0/my_lib/_generated/my_lib_v0.wasm<span class="w"> </span>-target<span class="o">=</span>wasm<span class="w"> </span>./bindings/wasm/v0
+</span></code></pre></div></p>
+<h3 id="b-v1-compilation-posix-wasi-preview-1">B. V1 Compilation (POSIX WASI Preview 1)<a class="headerlink" href="#b-v1-compilation-posix-wasi-preview-1" title="Permanent link">&para;</a></h3>
+<p>Compiles the JSON-RPC stdin/stdout subprocess runner.
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">GOOS</span><span class="o">=</span>wasip1<span class="w"> </span><span class="nv">GOARCH</span><span class="o">=</span>wasm<span class="w"> </span>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bindings/py/v1/my_lib/_generated/my_lib.wasm<span class="w"> </span>./bindings/wasm/v1
+</span></code></pre></div></p>
+<h3 id="c-v2-compilation-component-model-wasi-preview-2">C. V2 Compilation (Component Model WASI Preview 2)<a class="headerlink" href="#c-v2-compilation-component-model-wasi-preview-2" title="Permanent link">&para;</a></h3>
+<p>This is the most complex pipeline, consisting of 5 steps automated by <code>make build-wasm-v2</code>:</p>
+<pre class="mermaid"><code>graph TD
+    classDef file fill:#ECEFF1,stroke:#37474F,stroke-width:1px,rx:5px,ry:5px;
+    classDef tool fill:#E8EAF6,stroke:#1A237E,stroke-width:1px,rx:5px,ry:5px;
+
+    WIT["📂 bindings/wit/&lt;br&gt;(WIT spec files)"]:::file
+    GO_SRC["📂 bindings/wasm/v2/&lt;br&gt;(Go core implementation)"]:::file
+    GEN_GO["📂 bindings/wasm/gen/&lt;br&gt;(Generated Go bindings)"]:::file
+
+    WIT --&gt;|1. wit-bindgen| GEN_GO
+
+    GO_SRC --&gt;|2. tinygo build| RAW_WASM["📄 bindings/wasm/my_lib_raw.wasm&lt;br&gt;(WASI Preview 1 reactor)"]:::file
+    GEN_GO --&gt;|2. tinygo build| RAW_WASM
+
+    WIT --&gt;|3. wasm-tools embed| EMBED_WASM["📄 bindings/wasm/my_lib_embedded.wasm&lt;br&gt;(WASM with WIT metadata)"]:::file
+    RAW_WASM --&gt;|3. wasm-tools embed| EMBED_WASM
+
+    ADAPTER["📄 bin/wasi_snapshot_preview1.wasm&lt;br&gt;(WASI P1-to-P2 Adapter)"]:::file
+    EMBED_WASM --&gt;|4. wasm-tools new| COMP_WASM["📄 my_lib_component.wasm&lt;br&gt;(WASI Preview 2 Component)"]:::file
+    ADAPTER --&gt;|4. wasm-tools new| COMP_WASM
+
+    COMP_WASM --&gt;|5. jco transpile| JS_ESM["📂 my_lib/_generated/&lt;br&gt;(ES Modules &amp; TS Declarations)"]:::file</code></pre>
+<ol>
+<li><strong>Generate Go WIT Bindings</strong>:
+    Runs <code>wit-bindgen</code> to parse the WIT specs directory <code>bindings/wit</code> and produce Go bindings inside <code>bindings/wasm/gen/</code>.
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>wit-bindgen<span class="w"> </span>tiny-go<span class="w"> </span>./bindings/wit<span class="w"> </span>--out-dir<span class="w"> </span>./bindings/wasm/gen
+</span></code></pre></div></li>
+<li><strong>Compile Go WASI Reactor</strong>:
+    TinyGo compiles the Go module into a WASI Preview 1 reactor binary (<code>my_lib_raw.wasm</code>). The target is <code>wasi</code> and the build uses <code>-no-debug</code> to reduce size.
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>tinygo<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>./bindings/wasm/my_lib_raw.wasm<span class="w"> </span>-target<span class="o">=</span>wasi<span class="w"> </span>-no-debug<span class="w"> </span>./bindings/wasm/v2
+</span></code></pre></div></li>
+<li><strong>Embed WIT Metadata</strong>:
+    Runs <code>wasm-tools component embed</code> to inject the compiled WIT metadata directly into the WASM binary.
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>wasm-tools<span class="w"> </span>component<span class="w"> </span>embed<span class="w"> </span>./bindings/wit<span class="w"> </span>./bindings/wasm/my_lib_raw.wasm<span class="w"> </span>-o<span class="w"> </span>./bindings/wasm/my_lib_raw.wasm
+</span></code></pre></div></li>
+<li><strong>Translate to V2 Component (The Adapter)</strong>:
+    Runs <code>wasm-tools component new</code> to translate the Preview 1 system calls (<code>wasip1</code>) into Preview 2 interface imports (<code>wasip2</code>). This step requires the adapter file <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/wasi_snapshot_preview1.wasm"><code>wasi_snapshot_preview1.wasm</code></a> which acts as a bridge.
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>wasm-tools<span class="w"> </span>component<span class="w"> </span>new<span class="w"> </span>./bindings/wasm/my_lib_raw.wasm<span class="w"> </span>-o<span class="w"> </span>./bindings/py/v2/my_lib/_generated/my_lib_component.wasm<span class="w"> </span>--adapt<span class="w"> </span>./bin/wasi_snapshot_preview1.wasm
+</span></code></pre></div></li>
+<li><strong>Transpile to ES Modules (for JavaScript Hosts)</strong>:
+    Runs <code>jco transpile</code> on the generated component to produce standard browser-compatible JavaScript ES Modules and TypeScript <code>.d.ts</code> declaration files.
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>npx<span class="w"> </span>@bytecodealliance/jco<span class="w"> </span>transpile<span class="w"> </span>./bindings/py/v2/my_lib/_generated/my_lib_component.wasm<span class="w"> </span>-o<span class="w"> </span>./bindings/js/v2/my_lib/_generated
+</span></code></pre></div></li>
+</ol>
+<hr />
+<h2 id="3-customizing-the-contract">3. Customizing the Contract<a class="headerlink" href="#3-customizing-the-contract" title="Permanent link">&para;</a></h2>
+<p>If you need to extend or modify the library capabilities, you will update the interface contract files. Here is the step-by-step developer workflow to propagate changes through the decoupled architecture:</p>
+<h3 id="step-1-update-the-wit-specification-v2-only">Step 1: Update the WIT Specification (V2 Only)<a class="headerlink" href="#step-1-update-the-wit-specification-v2-only" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Modify or add <code>.wit</code> specification files inside <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/wit/"><code>bindings/wit/</code></a>.</li>
+<li>Regenerate the Go type definitions by running:
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>make<span class="w"> </span>build-wasm-v2
+</span></code></pre></div>
+    <em>(Note: This step will temporarily fail at Step 2 of compilation because the Go code does not yet implement the new interface).</em></li>
+</ol>
+<h3 id="step-2-update-the-go-implementations">Step 2: Update the Go Implementations<a class="headerlink" href="#step-2-update-the-go-implementations" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>For WASI V2 (Component Model)</strong>:</p>
+<ol>
+<li>Update the specific module file inside <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/wasm/v2/"><code>bindings/wasm/v2/</code></a> (<code>geometry.go</code>, <code>store.go</code>, <code>lang.go</code>, or <code>network.go</code>) to match the new generated signatures from <code>bindings/wasm/gen/</code>.</li>
+<li>If you added a completely new interface, register its implementation in the <code>init()</code> block of <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/wasm/v2/main.go"><code>bindings/wasm/v2/main.go</code></a>.</li>
+</ol>
+</li>
+<li>
+<p><strong>For WASI V1 (JSON-RPC)</strong>:</p>
+<ol>
+<li>Update the JSON-RPC handler callbacks inside <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/wasm/v1/"><code>bindings/wasm/v1/</code></a> (<code>geometry.go</code>, <code>store.go</code>, or <code>lang.go</code>) to handle the new method string and unpack/pack arguments.</li>
+<li>If you added a new handler, register it in <a href="file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/wasm/v1/main.go"><code>bindings/wasm/v1/main.go</code></a>.</li>
+</ol>
+</li>
+</ul>
+<h3 id="step-3-recompile-and-verify">Step 3: Recompile and Verify<a class="headerlink" href="#step-3-recompile-and-verify" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Re-run the build to compile all targets and transpile JS modules:
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>make<span class="w"> </span>build
+</span></code></pre></div></li>
+<li>Verify your changes by running the test suites:
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>make<span class="w"> </span><span class="nb">test</span>
+</span></code></pre></div></li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../python-host/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Python Host Integration">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Python Host Integration
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../troubleshooting/" class="md-footer__link md-footer__link--next" aria-label="Next: Developer Tips &amp;amp; Troubleshooting">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Developer Tips &amp; Troubleshooting
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 ouvrage.io/labs
+
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.ed145cee.min.js"></script>
+      
+    
+  </body>
+</html>

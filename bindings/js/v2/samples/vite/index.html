@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ouvrage Lab - WASI V2 Vite Bundler Sample</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; background: #fafafa; color: #333; }
+        .container { max-width: 650px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; }
+        .result-list { line-height: 2; margin-top: 1.5rem; }
+        .explanation { font-size: 0.9rem; color: #7f8c8d; line-height: 1.6; margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WASI v2: Vite Bundler Integration</h1>
+        <p>This sample demonstrates how a developer imports our library as an NPM package in a modern React/Vite/Vue application compiled with bundlers.</p>
+        
+        <div id="output">Loading and compiling via Vite...</div>
+
+        <div class="explanation">
+            <strong>How it works:</strong><br/>
+            Vite resolves the local dependency <code>my-lib-v2</code>, bundles the shims, and handles the static loading. No import maps are required because Vite handles module resolution on the host machine.
+        </div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>

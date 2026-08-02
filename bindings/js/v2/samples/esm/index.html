@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ouvrage Lab - WASI V2 Browser ESM Sample</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; background: #fafafa; color: #333; }
+        .container { max-width: 650px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; }
+        .result-list { line-height: 2; margin-top: 1.5rem; }
+        .explanation { font-size: 0.9rem; color: #7f8c8d; line-height: 1.6; margin-top: 2rem; }
+    </style>
+    
+    <!-- 1. Define Import Map to resolve preview2-shim imports to CDN at runtime -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@bytecodealliance/preview2-shim/cli": "https://esm.sh/@bytecodealliance/preview2-shim/cli",
+        "@bytecodealliance/preview2-shim/clocks": "https://esm.sh/@bytecodealliance/preview2-shim/clocks",
+        "@bytecodealliance/preview2-shim/filesystem": "https://esm.sh/@bytecodealliance/preview2-shim/filesystem",
+        "@bytecodealliance/preview2-shim/io": "https://esm.sh/@bytecodealliance/preview2-shim/io",
+        "@bytecodealliance/preview2-shim/random": "https://esm.sh/@bytecodealliance/preview2-shim/random"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>WASI v2: Browser ESM Integration</h1>
+        <p>This sample demonstrates importing our compiled WASM Component and exposing public API facade functions in-browser using standard ES Modules.</p>
+        
+        <div id="output">Running WASM Component in-browser...</div>
+
+        <div class="explanation">
+            <strong>How it works:</strong><br/>
+            The browser resolves the component shims using the native <code>importmap</code>. It loads the compiled module, instantiates the database in Go WASM heap memory, and calls calculations without any packaging or bundler requirements.
+        </div>
+    </div>
+
+    <script type="module">
+        // Import from our clean package entry point!
+        import { geometry, KVStore, lang } from '../../my_lib/index.js';
+
+        try {
+            // A. Call rich OOP geometry calculations
+            const p1 = new geometry.Point(0, 0);
+            const p2 = new geometry.Point(3, 4);
+            const dist = await p1.distanceTo(p2);
+
+            const rect = new geometry.Rectangle(p1, new geometry.Point(5, 4));
+            const area = await rect.area();
+
+            // B. Stateful KVStore session persisted in Go WASM linear heap memory
+            const db = new KVStore();
+            await db.set("username", "gpineda");
+            const user = await db.get("username");
+
+            // C. Call text utility
+            const msg = await lang.formatMessage(user);
+
+            document.getElementById('output').innerHTML = `
+                <ul class="result-list">
+                    <li><strong>p1.distanceTo(p2) :</strong> ${dist} (expected: 5)</li>
+                    <li><strong>rect.area() :</strong> ${area} (expected: 20)</li>
+                    <li><strong>KVStore.get('username') :</strong> ${user}</li>
+                    <li><strong>lang.formatMessage(...) :</strong> ${msg}</li>
+                </ul>
+            `;
+        } catch (err) {
+            document.getElementById('output').innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
+            console.error(err);
+        }
+    </script>
+</body>
+</html>

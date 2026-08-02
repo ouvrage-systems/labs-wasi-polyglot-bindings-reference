@@ -1,0 +1,29 @@
+package ouvrage:lab-wasi-demo;
+
+interface geometry {
+    record point {
+        x: f64,
+        y: f64,
+    }
+
+    record rectangle {
+        min: point,
+        max: point,
+    }
+
+    record circle {
+        center: point,
+        radius: f64,
+    }
+
+    record triangle {
+        a: point,
+        b: point,
+        c: point,
+    }
+
+    distance: func(a: point, b: point) -> f64;
+    area-rectangle: func(r: rectangle) -> f64;
+    area-circle: func(c: circle) -> f64;
+    area-triangle: func(t: triangle) -> f64;
+}

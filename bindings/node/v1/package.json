@@ -1,0 +1,10 @@
+{
+  "name": "my-lib-v1",
+  "version": "0.1.0",
+  "description": "Node.js WASI Preview 1 JSON-RPC bindings reference implementation",
+  "main": "my_lib/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}

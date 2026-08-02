@@ -1,0 +1,10 @@
+package ouvrage:lab-wasi-demo;
+
+world wasi-polyglot-reference {
+    import host-http;
+    
+    export geometry;
+    export store;
+    export lang;
+    export network;
+}

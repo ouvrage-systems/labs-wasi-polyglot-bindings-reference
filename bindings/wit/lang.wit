@@ -1,0 +1,6 @@
+package ouvrage:lab-wasi-demo;
+
+interface lang {
+    format-message: func(name: string) -> string;
+    reverse-string: func(s: string) -> string;
+}
