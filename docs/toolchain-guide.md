@@ -149,3 +149,22 @@ If you need to extend or modify the library capabilities, you will update the in
     ```bash
     make test
     ```
+
+---
+
+## 4. Future Outlook: WASI Preview 3 (0.3.0)
+
+While this Reference Lab locks onto **WASI Preview 2 (0.2.0)** for production-ready stability, we are actively tracking the evolution of the next major specification: **WASI Preview 3 (`0.3.0`)**.
+
+### Main Shift: Native Asynchrony
+The defining feature of WASI Preview 3 is the introduction of **first-class async capabilities (Futures and Streams)** at the WebAssembly Component Model boundary. In Preview 2, calling an import interface (such as a network socket or file read) is synchronous and blocking. Preview 3 will allow non-blocking, async/await operations natively across language boundaries (e.g., a JavaScript async event loop calling an asynchronous WASM guest without thread blocking).
+
+### Go & TinyGo Compiler Ecosystem Constraints
+We do not adopt WASI Preview 3 in the current workspace due to early-stage compiler support:
+
+1.  **TinyGo Scheduler**: Mapping Go goroutines and channels to WASM native async promises requires rewriting TinyGo's internal runtime scheduler. This is an active research area under the Bytecode Alliance but is not yet stable.
+2.  **Standard Go**: The official Go compiler (`gc`) is still consolidating its Preview 1 (`wasip1`) and Preview 2 targets. Native Preview 3 support is not yet ready for general use.
+3.  **Host Runtimes**: Node.js and Python `wasmtime` binders are currently focused on stabilizing their Preview 2 component APIs; Preview 3 async bindings are still in experimental draft stages.
+
+Ouvrage Systems will monitor the compiler maturity and plan a migration path to Preview 3 once TinyGo's async scheduling engine reaches stable release status.
+
