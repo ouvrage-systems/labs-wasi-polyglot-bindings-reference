@@ -1,0 +1,5 @@
+mode,limitTested,totalTimeMs,cpuUserMs,cpuSystemMs,heapDeltaMb,rssMb,result
+"WASM Internal (FindLastPrime)",500000,53.507,62.482,4.928,0.035,61.26,"499979"
+"Pure JS V8 JIT (FindLastPrime)",500000,1304.646,1449.084,4.416,0.229,64.48,"499979"
+"Iterative JS-to-WASM FFI (Cached)",50000,29.963,50.616,0.254,0.404,65.5,"49999"
+"WASM Fibonacci Recursive (N=35)",35,92.234,102.411,0.092,0.002,65.5,"9227465"

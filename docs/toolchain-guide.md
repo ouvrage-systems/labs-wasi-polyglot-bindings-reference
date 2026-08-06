@@ -52,10 +52,232 @@ Our [`Makefile`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindi
 ```
 
 ### A. V0 Compilation (Pure Browser WASM)
-Compiles a stateless arithmetic Go package to browser-compatible WebAssembly MVP.
-```bash
-tinygo build -o bindings/js/v0/my_lib/_generated/my_lib_v0.wasm -target=wasm ./bindings/wasm/v0
+
+WebAssembly in Go has evolved through two distinct architectural paradigms:
+
+1.  **Legacy Go WASM (`GOOS=js GOARCH=wasm`)**: Introduced in Go 1.11, this target embeds the full Go runtime, goroutine scheduler, and garbage collector. It produces large binaries (~2.4 MB minimal size) that require the official `wasm_exec.js` bridge script, import the `"gojs"` namespace, and register functions dynamically at runtime using `syscall/js`.
+2.  **TinyGo Micro WASM (`-target=wasm`)**: Designed for lightweight browser modules. It compiles stateless Go packages to pure WebAssembly 1.0 (MVP 2017) binaries of minuscule size (~10 KB) that export direct C-style functions (`//export Add`) callable without `wasm_exec.js`.
+
+For our V0 standalone arithmetic module, we use TinyGo with a simplified standalone entrypoint:
+
+```go title="./bindings/wasm/v0/tiny/main.go"
+package main
+
+//export Add
+func Add(a, b int32) int32 {
+	return a + b
+}
+
+func main() {
+	// Standalone Go WASM target requires a main function but it remains inactive.
+}
 ```
+
+#### 🛠️ Dissecting the TinyGo Compilation Pipeline (`-x`)
+
+Executing `tinygo build` with the execution trace flag (`-x`) exposes the raw LLVM compiler pipeline:
+
+```bash
+$ GOWORK=off ./bin/tinygo/bin/tinygo build -x -o bindings/build/v0/tiny/my_lib.wasm -target=wasm ./bindings/wasm/v0/tiny/
+wasm-ld --allow-undefined-file=/home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/packages/tinygo/0.41.1/targets/wasm-undefined.txt --stack-first --no-demangle -L /home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/packages/tinygo/0.41.1 -o /tmp/tinygo4013741042/main /tmp/tinygo4013741042/main.o /home/gpineda/.cache/tinygo/compiler-rt-wasm32-unknown-wasi-generic/lib.a /home/gpineda/.cache/tinygo/obj-fbac5ade9c65ab66f536a15d10b5278077e3b5dc84a664fe12d95a51.bc /home/gpineda/.cache/tinygo/obj-ee58115c57b2d37791bcff4d30499cfc52f98c831a80379f00c43dc3.bc /home/gpineda/.cache/tinygo/obj-bb40f64f6028efde80fb8ab8e27477845d218af84c0043a4897c814d.bc /home/gpineda/.cache/tinygo/wasi-libc-wasm32-unknown-wasi-generic/lib.a -mllvm -mcpu=generic -mllvm -mattr=+bulk-memory,+bulk-memory-opt,+call-indirect-overlong,+mutable-globals,+nontrapping-fptoint,+sign-ext,-multivalue,-reference-types --lto-O2 --thinlto-cache-dir=/home/gpineda/.cache/tinygo/thinlto -mllvm --rotation-max-header-size=0
+/home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/packages/tinygo/0.41.1/bin/wasm-opt --asyncify -Oz -g /tmp/tinygo4013741042/main --output /tmp/tinygo4013741042/main.wasmopt
+```
+
+This trace highlights the two core post-processing stages executed by TinyGo:
+
+1.  **WebAssembly Linker (`wasm-ld`)**:
+    TinyGo invokes the LLVM linker (`wasm-ld`), passing the target-specific undefined symbol whitelist `--allow-undefined-file=.../targets/wasm-undefined.txt`.
+    
+    ```txt title="./bin/packages/tinygo/0.41.1/targets/wasm-undefined.txt"
+    syscall/js.copyBytesToGo
+    syscall/js.copyBytesToJS
+    syscall/js.finalizeRef
+    syscall/js.stringVal
+    syscall/js.valueCall
+    ...
+    syscall/js.valueSetIndex
+    ```
+    
+    This whitelist instructs `wasm-ld` to permit unresolved `syscall/js.*` symbols without raising link-time errors. However, because our Go code performs pure arithmetic without referencing `syscall/js`, LLVM's **Dead Code Elimination (DCE)** phase strips all unused `syscall/js.*` functions from the final output.
+
+2.  **Binaryen Post-Optimization (`wasm-opt`)**:
+    TinyGo passes the linked WASM module through `wasm-opt` with size optimization (`-Oz`) and `--asyncify` passes:
+    ```bash
+    wasm-opt --asyncify -Oz -g /tmp/tinygo1234/main --output /tmp/tinygo1234/main.wasmopt
+    ```
+
+#### 🔍 WAT Disassembly Analysis (`wasm-tools print`)
+
+Inspecting the compiled `my_lib.wasm` imports shows that only three essential runtime stubs remain:
+
+```bash
+$ ./bin/wasm-tools print bindings/build/v0/tiny/my_lib.wasm | grep import
+(import "wasi_snapshot_preview1" "proc_exit" (func $runtime.proc_exit (;0;) (type 0)))
+(import "wasi_snapshot_preview1" "fd_write" (func $runtime.fd_write (;1;) (type 3)))
+(import "wasi_snapshot_preview1" "random_get" (func $__imported_wasi_snapshot_preview1_random_get (;2;) (type 2)))
+```
+
+> **Note**: TinyGo uses the `"wasi_snapshot_preview1"` namespace for these three internal runtime stubs (`proc_exit` for panic handling, `fd_write` for debug output, and `random_get` for map hashing seed entropy) to unify its low-level runtime across browser and WASI targets.
+
+Inspecting the exported `Add` function with `wasm-tools print` reveals how TinyGo wraps the Go implementation:
+
+```bash
+$ ./bin/wasm-tools print bindings/build/v0/tiny/my_lib.wasm | awk '/func \$Add/,/^\s*\)/'
+(func $Add (;61;) (type 2) (param i32 i32) (result i32)
+  local.get 0
+  local.get 1
+  i32.add
+)
+(func $Add.command_export (;73;) (type 2) (param i32 i32) (result i32)
+  (local i32)
+  local.get 0
+  local.get 1
+  call $Add
+  local.set 2
+  call $__wasm_call_dtors
+  local.get 2
+)
+(export "Add" (func $Add.command_export))
+```
+
+*   **`$Add`**: The pure Go arithmetic implementation containing the native WebAssembly `i32.add` opcode.
+*   **`$Add.command_export`**: A C-ABI command wrapper generated by TinyGo. When invoked from JavaScript (`instance.exports.Add`), it passes parameters to `$Add`, executes `$__wasm_call_dtors` to clean up temporary allocations, and returns the result `i32`.
+
+
+```go title="pkg/maths/maths.go"
+// ComputeSequence computes an arithmetic sequence Un = U0 + n * b using 64-bit integers.
+// Demonstrates LLVM scalar loop vectorization / constant reduction.
+func ComputeSequence(u0, b, n int64) int64 {
+	curr := u0
+	for i := int64(0); i < n; i++ {
+		curr = Add(curr, b)
+	}
+	return curr
+}
+```
+
+```
+gpineda@thinkpad-e15g2:~/Documents/ouvrage/labs/wasi-polyglot-bindings-reference$ ./bin/wasm-tools print bindings/build/v0/tiny/my_lib.wasm | grep -A 35 "func \$ComputeSequence"
+  (func $ComputeSequence (;53;) (type 13) (param i64 i64 i64) (result i64)
+    local.get 2
+    i64.const 0
+    local.get 2
+    i64.const 0
+    i64.gt_s
+    select
+    local.get 1
+    i64.mul         ;; N * B
+    local.get 0     
+    i64.add         ;; U0 + (N * B)
+
+  )
+--
+  (func $ComputeSequence.command_export (;70;) (type 13) (param i64 i64 i64) (result i64)
+    (local i64)
+    local.get 0
+    local.get 1
+    local.get 2
+    call $ComputeSequence
+    local.set 3
+    call $__wasm_call_dtors
+    local.get 3
+  )
+```
+> LLVM SCEV (Scalar Evolution): scalar loop vectorization and constant reduction optimizations are applied to the arithmetic sequence computation, resulting in a single `i64.mul` and `i64.add` operation instead of an explicit loop.
+
+
+
+#### 🌐 The Host Loader Role: Mocking WASI Imports in the Browser
+
+Because Web browsers do not natively implement WASI system calls, calling `WebAssembly.instantiateStreaming` directly on `my_lib.wasm` without an import object would fail at runtime with a `LinkError`.
+
+Our lightweight loader ([`bindings/js/v0/tiny/my_lib/_generated/loader.js`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/js/v0/tiny/my_lib/_generated/loader.js)) acts as an intentional **JS-side mock shim**. It provides a 10-line `mockWasiEnv` object that satisfies TinyGo's three required imports (`proc_exit`, `fd_write`, `random_get`) using browser-native APIs (`crypto.getRandomValues`) without pulling in heavy polyfill frameworks:
+
+```javascript
+const mockWasiEnv = {
+  proc_exit: (code) => console.warn(`WASM exit: ${code}`),
+  fd_write: (fd, iovs, iovs_len, nwritten) => 0,
+  random_get: (buf, buf_len) => {
+    if (wasmMemory) crypto.getRandomValues(new Uint8Array(wasmMemory.buffer, buf, buf_len));
+    return 0;
+  }
+};
+
+// Satisfies the WASM engine instantiation requirement
+const importObject = { wasi_snapshot_preview1: mockWasiEnv };
+```
+
+This encapsulates all low-level WASM instantiation mechanics inside `_generated/loader.js`, allowing the frontend application ([`index.html`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/js/v0/tiny/index.html)) to consume pure, clean ES Modules without any WASM boilerplate:
+
+```html
+<script type="module">
+    import { add } from './my_lib/index.js';
+    const result = await add(15, 35);
+    console.log("Result:", result); // Output: 50
+</script>
+```
+
+
+#### 🏛️ Comparative Analysis: Legacy Go WASM (`v0/legacy`)
+
+For educational contrast, our repository also includes the **Legacy Go WASM** target (`GOOS=js GOARCH=wasm`).
+
+Unlike TinyGo's direct `//export` mechanism, standard Go does not export WebAssembly functions directly to the binary's export table. Instead, it registers functions dynamically at runtime using `syscall/js`:
+
+```go title="./bindings/wasm/v0/legacy/main.go"
+package main
+
+import "syscall/js"
+
+func add(this js.Value, args []js.Value) any {
+	a := args[0].Int()
+	b := args[1].Int()
+	return a + b
+}
+
+func main() {
+	// Register the Go function in the global JS scope (window.add)
+	js.Global().Set("add", js.FuncOf(add))
+
+	// Block main goroutine to keep the runtime active
+	select {}
+}
+```
+
+When inspecting the WAT disassembly of `v0/legacy/my_lib.wasm`, imports belong to the `"gojs"` namespace rather than WASI:
+
+```bash
+$ ./bin/wasm-tools print bindings/build/v0/legacy/my_lib.wasm | grep import
+(import "gojs" "runtime.scheduleTimeoutEvent" (func (;0;) (type 1)))
+(import "gojs" "runtime.clearTimeoutEvent" (func (;1;) (type 1)))
+(import "gojs" "runtime.wasmWrite" (func (;3;) (type 1)))
+(import "gojs" "runtime.getRandomData" (func (;4;) (type 1)))
+(import "gojs" "runtime.wasmExit" (func (;6;) (type 6)))
+```
+
+Executing Legacy Go WASM requires loading Go's official `wasm_exec.js` runtime bridge:
+
+```html
+<!-- Requires official Go runtime bridge -->
+<script src="wasm_exec.js"></script>
+<script type="module">
+    const go = new Go();
+    const { instance } = await WebAssembly.instantiateStreaming(fetch('my_lib.wasm'), go.importObject);
+    go.run(instance); // Executes main() and registers window.add
+    console.log(window.add(15, 35)); // 50
+</script>
+```
+
+| Metric / Feature | TinyGo Micro WASM (`v0/tiny`) | Legacy Go WASM (`v0/legacy`) |
+| :--- | :--- | :--- |
+| **Compiler** | TinyGo (`-target=wasm`) | Standard Go (`GOOS=js GOARCH=wasm`) |
+| **Binary Footprint** | **~10 KB** | **~2.4 MB** |
+| **Export Model** | Native WASM `(export "Add")` | Dynamic JS Injection (`syscall/js`) |
+| **JS Bridge Dependency** | None (10-line mock loader) | Required (`wasm_exec.js`) |
+| **Import Namespace** | `"wasi_snapshot_preview1"` | `"gojs"` |
+
+
+
 
 ### B. V1 Compilation (POSIX WASI Preview 1)
 Compiles the JSON-RPC stdin/stdout subprocess runner.

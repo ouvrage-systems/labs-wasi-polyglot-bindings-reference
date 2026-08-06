@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "timestamp": "2026-08-05T01:47:56.649Z",
+    "engine": "Node.js v18.19.1",
+    "target": "WASM v0 TinyGo (64-bit int64)",
+    "wasmByteSize": 121348,
+    "limitRequested": 500000
+  },
+  "results": [
+    {
+      "mode": "WASM Internal (FindLastPrime)",
+      "limitTested": 500000,
+      "totalTimeMs": 53.507,
+      "cpuUserMs": 62.482,
+      "cpuSystemMs": 4.928,
+      "heapDeltaMb": 0.035,
+      "rssMb": 61.26,
+      "result": "499979"
+    },
+    {
+      "mode": "Pure JS V8 JIT (FindLastPrime)",
+      "limitTested": 500000,
+      "totalTimeMs": 1304.646,
+      "cpuUserMs": 1449.084,
+      "cpuSystemMs": 4.416,
+      "heapDeltaMb": 0.229,
+      "rssMb": 64.48,
+      "result": "499979"
+    },
+    {
+      "mode": "Iterative JS-to-WASM FFI (Cached)",
+      "limitTested": 50000,
+      "totalTimeMs": 29.963,
+      "cpuUserMs": 50.616,
+      "cpuSystemMs": 0.254,
+      "heapDeltaMb": 0.404,
+      "rssMb": 65.5,
+      "result": "49999"
+    },
+    {
+      "mode": "WASM Fibonacci Recursive (N=35)",
+      "limitTested": 35,
+      "totalTimeMs": 92.234,
+      "cpuUserMs": 102.411,
+      "cpuSystemMs": 0.092,
+      "heapDeltaMb": 0.002,
+      "rssMb": 65.5,
+      "result": "9227465"
+    }
+  ]
+}

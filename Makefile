@@ -4,13 +4,24 @@ SHELL := /bin/bash
 # Configuration and Paths
 LAB_DIR := $(shell pwd)
 BIN_DIR := $(LAB_DIR)/bin
+BUILD_DIR := bindings/build
+BUILD_V0_DIR := $(LAB_DIR)/bindings/build/v0
+BUILD_V0_TINY_DIR := $(BUILD_V0_DIR)/tiny
+BUILD_V0_LEGACY_DIR := $(BUILD_V0_DIR)/legacy
+
+
 WIT_DIR := $(LAB_DIR)/bindings/wit
 WASM_DIR := $(LAB_DIR)/bindings/wasm
 PY_V1_DIR := $(LAB_DIR)/bindings/py/v1
 PY_V2_DIR := $(LAB_DIR)/bindings/py/v2
 NODE_V1_DIR := $(LAB_DIR)/bindings/node/v1
 JS_V2_DIR := $(LAB_DIR)/bindings/js/v2
+
+
+
 JS_V0_DIR := $(LAB_DIR)/bindings/js/v0
+JS_V0_TINY_DIR := $(JS_V0_DIR)/tiny
+JS_V0_LEGACY_DIR := $(JS_V0_DIR)/legacy
 
 # Executables
 WIT_BINDGEN := $(BIN_DIR)/wit-bindgen
@@ -43,23 +54,45 @@ help:
 setup:
 	@./tools/bootstrap-wasi.sh --dir $(BIN_DIR)
 
-build: build-wasm-v0 build-wasm-v1 build-wasm-v2
+build: build-wasm-v0-tiny build-wasm-v0-legacy build-wasm-v1 build-wasm-v2
 
 test: run-py-v1 run-py-v2 run-node-v1 run-node-v2
 
-build-wasm-v0:
-	@echo "Compiling Go code to pure WASM (v0) for browser target..."
-	@mkdir -p $(JS_V0_DIR)/my_lib/_generated
-	@GOWORK=off $(TINYGO) build -o $(JS_V0_DIR)/my_lib/_generated/my_lib_v0.wasm -target=wasm ./bindings/wasm/v0
-	@echo "v0 Compilation successful: $(JS_V0_DIR)/my_lib/_generated/my_lib_v0.wasm"
+build-wasm-v0-tiny:
+	@echo "Compiling Go code to pure WASM (v0-tinygo) for browser target..."
+	@mkdir -p $(BUILD_V0_TINY_DIR)
+	@GOWORK=off $(TINYGO) build -scheduler=none -tags noscheduler -o $(BUILD_V0_TINY_DIR)/my_lib_maths.wasm -target=wasm ./bindings/wasm/v0/tiny
+	@GOWORK=off $(TINYGO) build -scheduler=asyncify -o $(BUILD_V0_TINY_DIR)/my_lib_maths_asyncify.wasm -target=wasm ./bindings/wasm/v0/tiny
+	@mkdir -p $(JS_V0_TINY_DIR)/my_lib/_generated
+	@cd $(JS_V0_TINY_DIR)/my_lib/_generated && ln -sf ../../../../../build/v0/tiny/my_lib_maths.wasm .
+	@cd $(JS_V0_TINY_DIR)/my_lib/_generated && ln -sf ../../../../../build/v0/tiny/my_lib_maths_asyncify.wasm .
+	@echo "v0-tiny Compilation successful: none     - $(BUILD_V0_TINY_DIR)/my_lib_maths.wasm"
+	@echo "v0-tiny Compilation successful: asyncify - $(BUILD_V0_TINY_DIR)/my_lib_maths_asyncify.wasm"
+
+
+
+build-wasm-v0-legacy:
+	@echo "Compiling Go code to pure WASM (v0-legacy) for browser target..."
+	@mkdir -p $(BUILD_V0_LEGACY_DIR)
+	@GOWORK=off GOOS=js GOARCH=wasm go build -o $(BUILD_V0_LEGACY_DIR)/my_lib_maths.wasm ./bindings/wasm/v0/legacy
+	@mkdir -p $(JS_V0_LEGACY_DIR)/my_lib/_generated
+	@cd $(JS_V0_LEGACY_DIR)/my_lib/_generated && ln -sf ../../../../../build/v0/legacy/my_lib_maths.wasm .
+	@echo "v0-legacy Compilation successful: $(BUILD_V0_LEGACY_DIR)/my_lib_maths.wasm"
+	@echo "v0-legacy JS lnk = $(JS_V0_LEGACY_DIR)/my_lib/_generated/my_lib_maths.wasm -> bindings/wasm/v0/legacy/my_lib_maths.wasm"
+
+
+build-wasm-v0: build-wasm-v0-tiny build-wasm-v0-legacy
+
 
 build-wasm-v1:
 	@echo "Step 1: Compiling Go code to WASI Preview 1 for v1 package..."
+	@mkdir -p $(BUILD_DIR)/v1
+	@GOWORK=off GOOS=wasip1 GOARCH=wasm go build -o $(BUILD_DIR)/v1/my_lib.wasm ./bindings/wasm/v1
 	@mkdir -p $(PY_V1_DIR)/my_lib/_generated
+	@cd $(PY_V1_DIR)/my_lib/_generated && ln -sf ../../../../build/v1/my_lib.wasm .
 	@mkdir -p $(NODE_V1_DIR)/my_lib/_generated
-	@GOWORK=off GOOS=wasip1 GOARCH=wasm go build -o $(PY_V1_DIR)/my_lib/_generated/my_lib.wasm ./bindings/wasm/v1
-	@cp $(PY_V1_DIR)/my_lib/_generated/my_lib.wasm $(NODE_V1_DIR)/my_lib/_generated/my_lib.wasm
-	@echo "v1 Compilation successful: $(PY_V1_DIR)/my_lib/_generated/my_lib.wasm"
+	@cd $(NODE_V1_DIR)/my_lib/_generated && ln -sf ../../../../build/v1/my_lib.wasm .
+	@echo "v1 Compilation successful: $(BUILD_DIR)/v1/my_lib.wasm"
 
 build-wasm-v2:
 	@if [ ! -f $(WIT_BINDGEN) ] || [ ! -f $(WASM_TOOLS) ] || [ ! -f $(TINYGO) ]; then \
@@ -72,21 +105,24 @@ build-wasm-v2:
 	@$(WIT_BINDGEN) tiny-go $(WIT_DIR) --out-dir $(WASM_DIR)/gen
 	
 	@echo "Step 2: Compiling Go code via TinyGo..."
-	@GOWORK=off $(TINYGO) build -o $(WASM_DIR)/my_lib_raw.wasm -target=wasi ./bindings/wasm/v2
+	@mkdir -p $(BUILD_DIR)/v2
+	@GOWORK=off $(TINYGO) build -o $(BUILD_DIR)/v2/my_lib_raw.wasm -target=wasi ./bindings/wasm/v2
 	
 	@echo "Step 3: Embedding WIT metadata..."
-	@$(WASM_TOOLS) component embed $(WIT_DIR) $(WASM_DIR)/my_lib_raw.wasm \
+	@$(WASM_TOOLS) component embed $(WIT_DIR) $(BUILD_DIR)/v2/my_lib_raw.wasm \
 		--world wasi-polyglot-reference \
-		-o $(WASM_DIR)/my_lib_embedded.wasm
+		-o $(BUILD_DIR)/v2/my_lib_embedded.wasm
 	
 	@echo "Step 4: Translating to WASI Preview 2 Component..."
-	@mkdir -p $(PY_V2_DIR)/my_lib/_generated
-	@$(WASM_TOOLS) component new $(WASM_DIR)/my_lib_embedded.wasm \
+	@$(WASM_TOOLS) component new $(BUILD_DIR)/v2/my_lib_embedded.wasm \
 		--adapt $(ADAPTER_WASM) \
-		-o $(PY_V2_DIR)/my_lib/_generated/my_lib_component.wasm
-	@echo "v2 Component compiled successfully: $(PY_V2_DIR)/my_lib/_generated/my_lib_component.wasm"
+		-o $(BUILD_DIR)/v2/my_lib_component.wasm
+	@echo "v2 Component compiled successfully: $(BUILD_DIR)/v2/my_lib_component.wasm"
+	@mkdir -p $(PY_V2_DIR)/my_lib/_generated
+	@cd $(PY_V2_DIR)/my_lib/_generated && ln -sf ../../../../build/v2/my_lib_component.wasm .
 	@echo "Step 5: Transpiling WASI Preview 2 Component to ES Modules for Node.js..."
-	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y @bytecodealliance/jco transpile $(PY_V2_DIR)/my_lib/_generated/my_lib_component.wasm --map "ouvrage:lab-wasi-demo/host-http=../host-http.js" -o $(JS_V2_DIR)/my_lib/_generated
+	@mkdir -p $(JS_V2_DIR)/my_lib/_generated
+	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y @bytecodealliance/jco transpile $(BUILD_DIR)/v2/my_lib_component.wasm --map "ouvrage:lab-wasi-demo/host-http=../host-http.js" -o $(JS_V2_DIR)/my_lib/_generated
 
 run: run-py-v1
 
@@ -120,10 +156,10 @@ run-webpack-sample:
 
 clean:
 	@rm -rf $(BIN_DIR)
-	@rm -rf $(WASM_DIR)/gen $(WASM_DIR)/my_lib_raw.wasm
-	@rm -f $(PY_V1_DIR)/my_lib/_generated/my_lib.wasm
-	@rm -f $(PY_V2_DIR)/my_lib/_generated/my_lib_component.wasm
-	@rm -f $(NODE_V1_DIR)/my_lib/_generated/my_lib.wasm
-	@rm -rf $(JS_V2_DIR)/my_lib/_generated
-	@rm -rf $(JS_V0_DIR)/my_lib/_generated
+	@rm -rf $(LAB_DIR)/$(BUILD_DIR)
+	@rm -rf $(WASM_DIR)/gen
+	@find $(LAB_DIR)/bindings -name "*.wasm" -delete
+	@rm -rf $(JS_V2_DIR)/my_lib/_generated/interfaces
+	@rm -f $(JS_V2_DIR)/my_lib/_generated/my_lib_component*
 	@echo "Clean completed."
+

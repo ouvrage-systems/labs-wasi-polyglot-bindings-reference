@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ouvrage Lab - WASM v0 TinyGo Interactive Benchmark Studio</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #64748b;
+            --secondary-hover: #475569;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --success: #16a34a;
+            --warning: #d97706;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 2rem 1rem;
+            background: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.025);
+            border: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            margin-top: 0;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .op-header-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 1rem 1.2rem;
+            border-radius: 8px;
+            margin: 1.5rem 0 1rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .input-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        input[type="number"], select {
+            padding: 0.6rem 0.8rem;
+            font-size: 0.95rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        input[type="number"]:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin: 1.2rem 0;
+        }
+
+        button {
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
+        button:disabled, input:disabled, select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed !important;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.2rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        .btn-cancel {
+            background: #fee2e2;
+            color: var(--danger);
+            border: 1px solid #fca5a5;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover:not(:disabled) {
+            background: #fecaca;
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: var(--danger);
+            border: 1px solid #fca5a5;
+            padding: 0.65rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #fecaca;
+        }
+
+        .progress-box {
+            display: none;
+            background: #e0f2fe;
+            border: 1px solid #bae6fd;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            color: #0369a1;
+            font-size: 0.88rem;
+            font-weight: 600;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #cbd5e1;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.3rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.1s linear;
+        }
+
+        .table-container {
+            margin-top: 1.5rem;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-family: monospace;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:nth-child(even) {
+            background: #fdfdfd;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-pass {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-warn {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .explanation {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border);
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #0f172a;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span>WASM v0: Interactive Benchmark Studio</span>
+            <span id="wasmSizeBadge" class="badge">TinyGo ~100KB</span>
+
+        </h1>
+        
+        <p>Interactive polyglot benchmark studio comparing 64-bit <code>int64</code> workloads across WebAssembly and V8 JIT JavaScript engines.</p>
+
+        <!-- Top Workload Operation Selector -->
+        <div class="op-header-box">
+            <label for="opSelect" style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">1. Select Target Operation:</label>
+            <select id="opSelect">
+                <option value="primes" selected>🔢 Prime Numbers (Find Largest Prime ≤ Limit)</option>
+                <option value="concurrent_primes">⚡ Concurrent Primes (Goroutines / Web Workers)</option>
+                <option value="fibonacci_rec">🌀 Fibonacci Recursive (Stack Intensive O(2ⁿ))</option>
+                <option value="fibonacci_iter">⚡ Fibonacci Iterative (Fast Loop O(N))</option>
+                <option value="sequence">📐 Arithmetic Sequence (Uₙ = U₀ + N × B)</option>
+                <option value="add">➕ Scalar Addition (A + B)</option>
+            </select>
+        </div>
+
+        <!-- Dynamic Inputs A, B, C & Target Binary -->
+        <div class="grid-inputs">
+            <div class="input-box">
+                <label id="labelA" for="valA">Parameter A (Worker Count K)</label>
+                <input type="number" id="valA" value="4">
+            </div>
+            <div class="input-box">
+                <label id="labelB" for="valB">Parameter B (Test Number)</label>
+                <input type="number" id="valB" value="35">
+            </div>
+            <div class="input-box">
+                <label id="labelC" for="valC">Parameter C (Search Limit N)</label>
+                <input type="number" id="valC" value="500000">
+            </div>
+            <div class="input-box">
+                <label for="execSelect">2. Select Execution Mode:</label>
+                <select id="execSelect">
+                    <option value="wasm_internal" selected>⚡ WASM Internal (1 Call - Full Speed)</option>
+                    <option value="js_pure">🚀 Pure JS V8 (JIT Engine)</option>
+                    <option value="wasm_iter_cached">🔄 N Calls WASM (Cached Instance)</option>
+                    <option value="wasm_iter_cold">🧊 N Calls WASM (Cold Re-Instantiations)</option>
+                </select>
+            </div>
+            <div class="input-box">
+                <label for="binarySelect">3. Select Target WASM Binary:</label>
+                <select id="binarySelect">
+                    <option value="my_lib.wasm" selected>⚡ TinyGo MVP (Default ~10KB - scheduler=none)</option>
+                    <option value="my_lib_asyncify.wasm">🌀 TinyGo Asyncify (Coroutines ~135KB - scheduler=asyncify)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="btn-actions">
+            <button id="runBenchBtn" class="btn-primary">🚀 Execute Operation</button>
+            <button id="clearTableBtn" class="btn-danger">🗑️ Clear History</button>
+        </div>
+
+        <div id="progressBox" class="progress-box">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <span id="progressText">⏳ Running Benchmark...</span>
+                <button id="cancelBenchBtn" class="btn-cancel">🛑 Cancel Run</button>
+            </div>
+            <div class="progress-bar-container">
+                <div id="progressBarFill" class="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Workload</th>
+                        <th>Execution Mode</th>
+                        <th>Parameters</th>
+                        <th>Total Time</th>
+                        <th>Avg / Call</th>
+                        <th>RAM Heap Δ</th>
+                        <th>Result</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                            No runs recorded yet. Select operation, parameters, and click <strong>Execute Operation</strong>.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="explanation">
+            <strong>External Reference & Performance Metrics Notes:</strong><br/>
+            • <strong>Target WASM Binary:</strong> Compares TinyGo MVP default (ultra-lightweight ~10KB) vs Asyncify (~135KB coroutines scheduler).<br/>
+            • <strong>Concurrent Primes:</strong> Compares WASM Go Goroutines & Channels vs JS V8 Web Workers multi-core parallel CPU execution.<br/>
+            • <strong>Fibonacci Recursive (Cached/Cold):</strong> Uses JS stack for recursion $O(2^N)$ and delegates every atomic addition to WASM <code>Add(a, b)</code> via FFI.<br/>
+            • <strong>Prime Numbers:</strong> Returns the largest prime number $\le \text{Limit}$ (e.g. $499,979$ for limit $500,000$). Verify against <a href="https://primes.utm.edu/curios/" target="_blank" rel="noopener">UTM Prime Pages</a>.<br/>
+            • <strong>N Calls Cached / Cold:</strong> Invokes WASM functions $N$ times from JavaScript to WebAssembly. Click 🛑 Cancel Run at any time to interrupt long loops.
+        </div>
+    </div>
+
+        import { add, addCold, computeSequence, isPrime, isPrimeCold, countPrimes, concurrentCountPrimes, findLastPrime, fibonacci, fibonacciRecursive, fibonacciRecursiveCold, getWasmByteSize } from './my_lib_maths/index.js';
+        import { jsAdd, jsComputeSequence, jsIsPrime, jsCountPrimes, jsConcurrentCountPrimes, jsFindLastPrime, jsFibonacciIterative, jsFibonacciRecursive } from './my_lib_maths/maths_js.js';
+
+
+        const opSelect = document.getElementById('opSelect');
+        const execSelect = document.getElementById('execSelect');
+        const binarySelect = document.getElementById('binarySelect');
+        const labelA = document.getElementById('labelA');
+        const labelB = document.getElementById('labelB');
+        const labelC = document.getElementById('labelC');
+        const valAInput = document.getElementById('valA');
+        const valBInput = document.getElementById('valB');
+        const valCInput = document.getElementById('valC');
+        const runBenchBtn = document.getElementById('runBenchBtn');
+        const cancelBenchBtn = document.getElementById('cancelBenchBtn');
+        const clearTableBtn = document.getElementById('clearTableBtn');
+        const historyTableBody = document.getElementById('historyTableBody');
+        const wasmSizeBadge = document.getElementById('wasmSizeBadge');
+        const progressBox = document.getElementById('progressBox');
+        const progressText = document.getElementById('progressText');
+        const progressBarFill = document.getElementById('progressBarFill');
+
+        let runCounter = 0;
+        let isHistoryEmpty = true;
+        let cancelRequested = false;
+
+        async function updateBadge() {
+            try {
+                const targetBin = binarySelect.value;
+                const byteSize = await getWasmByteSize(targetBin);
+                const sizeKb = (byteSize / 1024).toFixed(2);
+                wasmSizeBadge.innerText = `TinyGo ${targetBin} - ${sizeKb} KB (${byteSize.toLocaleString()} bytes)`;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        binarySelect.addEventListener('change', updateBadge);
+        updateBadge();
+
+        function updateContextLabels() {
+            const op = opSelect.value;
+            if (op === 'primes') {
+                labelA.innerText = 'Param A (Unused for Primes)';
+                labelB.innerText = 'Test Number B (Single Call)';
+                labelC.innerText = 'Prime Search Limit C';
+                valAInput.disabled = true;
+                valBInput.disabled = false;
+                valCInput.disabled = false;
+            } else if (op === 'concurrent_primes') {
+                labelA.innerText = 'Worker Count K (Param A)';
+                labelB.innerText = 'Param B (Unused)';
+                labelC.innerText = 'Prime Search Limit C';
+                valAInput.disabled = false;
+                valBInput.disabled = true;
+                valCInput.disabled = false;
+            } else if (op === 'fibonacci_rec') {
+                labelA.innerText = 'Param A (Unused for Fib)';
+                labelB.innerText = 'Param B (Unused for Fib)';
+                labelC.innerText = 'Fibonacci Term N (Param C)';
+                valAInput.disabled = true;
+                valBInput.disabled = true;
+                valCInput.disabled = false;
+                if (parseInt(valCInput.value, 10) > 30) valCInput.value = 25;
+            } else if (op === 'fibonacci_iter') {
+                labelA.innerText = 'Param A (Unused for Fib)';
+                labelB.innerText = 'Param B (Unused for Fib)';
+                labelC.innerText = 'Fibonacci Term N (Param C)';
+                valAInput.disabled = true;
+                valBInput.disabled = true;
+                valCInput.disabled = false;
+            } else if (op === 'sequence') {
+                labelA.innerText = 'Initial Term U₀ (Param A)';
+                labelB.innerText = 'Common Reason B (Param B)';
+                labelC.innerText = 'Sequence Iterations C';
+                valAInput.disabled = false;
+                valBInput.disabled = false;
+                valCInput.disabled = false;
+            } else { // add
+                labelA.innerText = 'Operand A';
+                labelB.innerText = 'Operand B';
+                labelC.innerText = 'Repeat Count C';
+                valAInput.disabled = false;
+                valBInput.disabled = false;
+                valCInput.disabled = false;
+            }
+        }
+
+        opSelect.addEventListener('change', updateContextLabels);
+        updateContextLabels();
+
+        cancelBenchBtn.addEventListener('click', () => {
+            cancelRequested = true;
+            progressText.innerText = '⏹️ Cancelling run...';
+        });
+
+        function setUiLocked(locked) {
+            opSelect.disabled = locked;
+            execSelect.disabled = locked;
+            binarySelect.disabled = locked;
+            valAInput.disabled = locked || (opSelect.value === 'primes' || opSelect.value.startsWith('fibonacci'));
+            valBInput.disabled = locked || opSelect.value.startsWith('fibonacci') || opSelect.value === 'concurrent_primes';
+            valCInput.disabled = locked;
+            runBenchBtn.disabled = locked;
+            clearTableBtn.disabled = locked;
+        }
+
+        function showProgress(text, pct = 0) {
+            progressBox.style.display = 'flex';
+            progressText.innerText = text;
+            progressBarFill.style.width = `${pct}%`;
+        }
+
+        function hideProgress() {
+            progressBox.style.display = 'none';
+            progressBarFill.style.width = '0%';
+            cancelRequested = false;
+        }
+
+        function getHeapBytes() {
+            if (window.performance && window.performance.memory) {
+                return window.performance.memory.usedJSHeapSize;
+            }
+            return null;
+        }
+
+        function addTableRow(opLabel, execLabel, paramsText, totalMs, avgNs, heapDeltaMbStr, finalRes, statusType = 'pass', statusText = '✓ Verified') {
+            if (isHistoryEmpty) {
+                historyTableBody.innerHTML = '';
+                isHistoryEmpty = false;
+            }
+
+            let pillClass = 'status-pass';
+            if (statusType === 'warn') pillClass = 'status-warn';
+            if (statusType === 'fail') pillClass = 'status-fail';
+
+            runCounter++;
+            const rowId = `row-${runCounter}`;
+            const tr = document.createElement('tr');
+            tr.id = rowId;
+            tr.innerHTML = `
+                <td><strong>#${runCounter}</strong></td>
+                <td>${opLabel}</td>
+                <td>${execLabel}</td>
+                <td>${paramsText}</td>
+                <td><strong>${totalMs.toFixed(3)} ms</strong></td>
+                <td>${avgNs ? avgNs.toFixed(2) + ' ns' : 'N/A'}</td>
+                <td>${heapDeltaMbStr}</td>
+                <td>${typeof finalRes === 'number' || typeof finalRes === 'bigint' ? finalRes.toLocaleString() : finalRes}</td>
+                <td>
+                    <span id="status-${rowId}" class="status-pill ${pillClass}">
+                        ${statusText}
+                    </span>
+                </td>
+            `;
+            historyTableBody.prepend(tr);
+            return rowId;
+        }
+
+        function updateRowStatus(rowId, statusType = 'pass', statusText = '✓ Verified') {
+            const pill = document.getElementById(`status-${rowId}`);
+            if (!pill) return;
+            let pillClass = 'status-pass';
+            if (statusType === 'warn') pillClass = 'status-warn';
+            if (statusType === 'fail') pillClass = 'status-fail';
+            pill.className = `status-pill ${pillClass}`;
+            pill.innerText = statusText;
+        }
+
+
+
+
+        runBenchBtn.addEventListener('click', async () => {
+            const op = opSelect.value;
+            const exec = execSelect.value;
+            const targetBinary = binarySelect.value;
+            const a = parseInt(valAInput.value, 10) || 0;
+            const b = parseInt(valBInput.value, 10) || 0;
+            const c = parseInt(valCInput.value, 10) || 1000;
+
+            cancelRequested = false;
+            setUiLocked(true);
+
+            const heap0 = getHeapBytes();
+
+            try {
+                let opLabel = '';
+                let execLabel = '';
+                let totalMs = 0;
+                let finalRes = '';
+
+                if (op === 'primes') opLabel = 'Prime Numbers';
+                else if (op === 'concurrent_primes') opLabel = 'Concurrent Primes';
+                else if (op === 'fibonacci_rec') opLabel = 'Fibonacci Recursive';
+                else if (op === 'fibonacci_iter') opLabel = 'Fibonacci Iterative';
+                else if (op === 'sequence') opLabel = 'Arithmetic Sequence';
+                else opLabel = 'Scalar Addition';
+
+                if (exec === 'wasm_internal') execLabel = `WASM Internal (${targetBinary})`;
+                else if (exec === 'js_pure') execLabel = 'Pure JS V8 JIT';
+                else if (exec === 'wasm_iter_cached') execLabel = `N Calls WASM Cached (${targetBinary})`;
+                else execLabel = `N Calls WASM Cold (${targetBinary})`;
+
+                function getHeapStr() {
+                    const heap1 = getHeapBytes();
+                    if (heap0 !== null && heap1 !== null) {
+                        const delta = (heap1 - heap0) / (1024 * 1024);
+                        return (delta >= 0 ? '+' : '') + delta.toFixed(3) + ' MB';
+                    }
+                    return 'N/A';
+                }
+
+                // --- WORKLOAD 0: CONCURRENT PRIMES ---
+                if (op === 'concurrent_primes') {
+                    const workers = Math.max(1, a || 4);
+
+                    if (exec === 'wasm_internal') {
+                        showProgress(`⚡ ConcurrentPrimes(${c.toLocaleString()}) via ${workers} Go Goroutines (${targetBinary})...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        try {
+                            const res = await concurrentCountPrimes(c, workers, targetBinary);
+                            const t1 = performance.now();
+                            totalMs = (t1 - t0);
+                            finalRes = BigInt(res);
+                            addTableRow(opLabel, `${execLabel} (${workers} Goroutines)`, `Limit=${c.toLocaleString()}, Workers=${workers}`, totalMs, (totalMs * 1000000 / c), getHeapStr(), finalRes, 'pass', '✓ Verified');
+                        } catch (err) {
+                            const t1 = performance.now();
+                            totalMs = (t1 - t0);
+                            addTableRow(opLabel, `${execLabel} (${workers} Goroutines)`, `Limit=${c.toLocaleString()}, Workers=${workers}`, totalMs, 0, getHeapStr(), 'nilPanic', 'fail', `❌ FFI Panic (${err.message || 'nilPanic'})`);
+                        }
+
+                    } else if (exec === 'js_pure') {
+                        showProgress(`🚀 ConcurrentPrimes(${c.toLocaleString()}) via ${workers} JS Async Chunk Tasks...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        const chunkSize = Math.floor((c - 1) / workers);
+                        const tasks = [];
+                        const t0 = performance.now();
+                        for (let w = 0; w < workers; w++) {
+                            const start = 2 + w * chunkSize;
+                            const end = (w === workers - 1) ? c : (start + chunkSize - 1);
+                            tasks.push((async () => jsCountPrimesRange(start, end))());
+                        }
+                        const results = await Promise.all(tasks);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = results.reduce((acc, curr) => acc + curr, 0n);
+                        addTableRow(opLabel, `${execLabel} (${workers} Async Workers)`, `Limit=${c.toLocaleString()}, Workers=${workers}`, totalMs, (totalMs * 1000000 / c), getHeapStr(), finalRes, 'pass', '✓ Verified');
+                    } else if (exec === 'wasm_iter_cached') {
+                        showProgress(`🔄 ConcurrentPrimes(${c.toLocaleString()}) via ${workers} WASM Cached Range Calls (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        const chunkSize = Math.floor((c - 1) / workers);
+                        const tasks = [];
+                        const t0 = performance.now();
+                        for (let w = 0; w < workers; w++) {
+                            const start = 2 + w * chunkSize;
+                            const end = (w === workers - 1) ? c : (start + chunkSize - 1);
+                            tasks.push((async () => {
+                                let cnt = 0n;
+                                for (let i = start; i <= end; i++) {
+                                    if (cancelRequested) break;
+                                    if (await isPrime(i, targetBinary)) cnt++;
+                                }
+                                return cnt;
+                            })());
+                        }
+                        const results = await Promise.all(tasks);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = results.reduce((acc, curr) => acc + curr, 0n);
+                        addTableRow(opLabel, `${execLabel} (${workers} WASM Cached Workers)`, `Limit=${c.toLocaleString()}, Workers=${workers}`, totalMs, (totalMs * 1000000 / c), getHeapStr(), finalRes, cancelRequested ? 'warn' : 'pass', cancelRequested ? '⏹️ Cancelled' : '✓ Verified');
+                    } else { // cold
+                        showProgress(`🧊 ConcurrentPrimes(${c.toLocaleString()}) via ${workers} WASM Cold Range Calls (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        const chunkSize = Math.floor((c - 1) / workers);
+                        const tasks = [];
+                        const t0 = performance.now();
+                        for (let w = 0; w < workers; w++) {
+                            const start = 2 + w * chunkSize;
+                            const end = (w === workers - 1) ? c : (start + chunkSize - 1);
+                            tasks.push((async () => {
+                                let cnt = 0n;
+                                for (let i = start; i <= end; i++) {
+                                    if (cancelRequested) break;
+                                    if (await isPrimeCold(i, targetBinary)) cnt++;
+                                }
+                                return cnt;
+                            })());
+                        }
+                        const results = await Promise.all(tasks);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = results.reduce((acc, curr) => acc + curr, 0n);
+                        addTableRow(opLabel, `${execLabel} (${workers} WASM Cold Workers)`, `Limit=${c.toLocaleString()}, Workers=${workers}`, totalMs, (totalMs * 1000000 / c), getHeapStr(), finalRes, cancelRequested ? 'warn' : 'pass', cancelRequested ? '⏹️ Cancelled' : '✓ Verified');
+                    }
+                    return;
+                }
+
+                // --- WORKLOAD 1: FIBONACCI RECURSIVE ---
+                if (op === 'fibonacci_rec') {
+                    if (exec === 'wasm_internal') {
+                        showProgress(`🌀 Computing Fib(${c}) recursively inside WASM (${targetBinary})...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        const res = await fibonacciRecursive(c, targetBinary);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = BigInt(res);
+                        const rowId = addTableRow(opLabel, execLabel, `N=${c}`, totalMs, null, getHeapStr(), finalRes, 'warn', '⏳ Verifying...');
+                        await new Promise(r => setTimeout(r, 10));
+                        const expected = jsFibonacciIterative(BigInt(c));
+                        const isVerified = (finalRes === expected);
+                        updateRowStatus(rowId, isVerified ? 'pass' : 'fail', isVerified ? '✓ Verified' : '❌ Mismatch');
+                    } else if (exec === 'js_pure') {
+                        showProgress(`🚀 Computing Fib(${c}) recursively in V8 JIT...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        const res = jsFibonacciRecursive(BigInt(c));
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = res;
+                        const rowId = addTableRow(opLabel, execLabel, `N=${c}`, totalMs, null, getHeapStr(), finalRes, 'warn', '⏳ Verifying...');
+                        await new Promise(r => setTimeout(r, 10));
+                        const expected = jsFibonacciIterative(BigInt(c));
+                        const isVerified = (finalRes === expected);
+                        updateRowStatus(rowId, isVerified ? 'pass' : 'fail', isVerified ? '✓ Verified' : '❌ Mismatch');
+
+
+                    } else if (exec === 'wasm_iter_cached') {
+                        let ffiCount = 0;
+                        const totalAdditions = Number(jsFibonacciIterative(BigInt(c + 1)) - 1n);
+
+                        async function jsWasmStackFibCached(n) {
+                            if (cancelRequested) return 0n;
+                            if (n <= 0n) return 0n;
+                            if (n === 1n) return 1n;
+                            const left = await jsWasmStackFibCached(n - 1n);
+                            const right = await jsWasmStackFibCached(n - 2n);
+                            ffiCount++;
+                            if (ffiCount % 10000 === 0) {
+                                showProgress(`🔄 JS Stack + WASM Add Cached (${ffiCount.toLocaleString()} / ${totalAdditions.toLocaleString()})...`, Math.floor((ffiCount / totalAdditions) * 100));
+                                await new Promise(r => setTimeout(r, 0));
+                            }
+                            return BigInt(await add(left, right, targetBinary));
+                        }
+
+                        showProgress(`🔄 Computing Fib(${c}) using JS stack + WASM Add FFI calls (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        const res = await jsWasmStackFibCached(BigInt(c));
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = res;
+                        const isVerified = (finalRes === expected && !cancelRequested);
+                        addTableRow(opLabel, `${execLabel} (JS Stack + WASM Add)`, `N=${c} (${ffiCount.toLocaleString()} FFI Add Calls)`, totalMs, ffiCount > 0 ? (totalMs * 1000000 / ffiCount) : 0, getHeapStr(), finalRes, cancelRequested ? 'warn' : (isVerified ? 'pass' : 'fail'), cancelRequested ? '⏹️ Cancelled' : (isVerified ? '✓ Verified' : '❌ Mismatch'));
+                    } else { // cold
+                        let ffiCount = 0;
+                        const totalAdditions = Number(jsFibonacciIterative(BigInt(c + 1)) - 1n);
+
+                        async function jsWasmStackFibCold(n) {
+                            if (cancelRequested) return 0n;
+                            if (n <= 0n) return 0n;
+                            if (n === 1n) return 1n;
+                            const left = await jsWasmStackFibCold(n - 1n);
+                            const right = await jsWasmStackFibCold(n - 2n);
+                            ffiCount++;
+                            if (ffiCount % 50 === 0) {
+                                showProgress(`🧊 JS Stack + Cold WASM Add (${ffiCount.toLocaleString()} / ${totalAdditions.toLocaleString()})...`, Math.floor((ffiCount / totalAdditions) * 100));
+                                await new Promise(r => setTimeout(r, 0));
+                            }
+                            return BigInt(await addCold(left, right, targetBinary));
+                        }
+
+                        showProgress(`🧊 Computing Fib(${c}) using JS stack + Cold WASM Add (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        const res = await jsWasmStackFibCold(BigInt(c));
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = res;
+                        const isVerified = (finalRes === expected && !cancelRequested);
+                        addTableRow(opLabel, `${execLabel} (JS Stack + Cold WASM Add)`, `N=${c} (${ffiCount.toLocaleString()} Cold Add Calls)`, totalMs, ffiCount > 0 ? (totalMs * 1000000 / ffiCount) : 0, getHeapStr(), finalRes, cancelRequested ? 'warn' : (isVerified ? 'pass' : 'fail'), cancelRequested ? '⏹️ Cancelled' : (isVerified ? '✓ Verified' : '❌ Mismatch'));
+                    }
+                    return;
+                }
+
+                // --- WORKLOAD 2: FIBONACCI ITERATIVE ---
+                if (op === 'fibonacci_iter') {
+                    const expected = jsFibonacciIterative(BigInt(c));
+
+                    if (exec === 'wasm_internal') {
+                        showProgress(`⚡ Computing Fib(${c}) iteratively inside WASM (${targetBinary})...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        const res = await fibonacci(c, targetBinary);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = BigInt(res);
+                        const isVerified = (finalRes === expected);
+                        addTableRow(opLabel, execLabel, `N=${c}`, totalMs, null, getHeapStr(), finalRes, isVerified ? 'pass' : 'fail', isVerified ? '✓ Verified' : '❌ Mismatch');
+                    } else if (exec === 'js_pure') {
+                        showProgress(`🚀 Computing Fib(${c}) iteratively in V8 JIT...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        const res = jsFibonacciIterative(BigInt(c));
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = res;
+                        const isVerified = (finalRes === expected);
+                        addTableRow(opLabel, execLabel, `N=${c}`, totalMs, null, getHeapStr(), finalRes, isVerified ? 'pass' : 'fail', isVerified ? '✓ Verified' : '❌ Mismatch');
+                    } else if (exec === 'wasm_iter_cached') {
+                        showProgress(`🔄 Executing ${c} WASM add() cached calls for Fib(${c}) iterative (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        let ffiCount = 0;
+                        let valA = 0n, valB = 1n;
+                        const t0 = performance.now();
+                        if (c <= 0) valB = 0n;
+                        else if (c === 1) valB = 1n;
+                        else {
+                            for (let i = 2; i <= c; i++) {
+                                if (cancelRequested) break;
+                                const next = BigInt(await add(valA, valB, targetBinary));
+                                valA = valB;
+                                valB = next;
+                                ffiCount++;
+                            }
+                        }
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = valB;
+                        const isVerified = (finalRes === expected && !cancelRequested);
+                        addTableRow(opLabel, `${execLabel} (JS Loop + WASM Add)`, `N=${c} (${ffiCount.toLocaleString()} FFI Add Calls)`, totalMs, ffiCount > 0 ? (totalMs * 1000000 / ffiCount) : 0, getHeapStr(), finalRes, cancelRequested ? 'warn' : (isVerified ? 'pass' : 'fail'), cancelRequested ? '⏹️ Cancelled' : (isVerified ? '✓ Verified' : '❌ Mismatch'));
+                    } else { // cold
+                        showProgress(`🧊 Executing ${c} WASM cold add() re-instantiations for Fib(${c}) iterative (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        let ffiCount = 0;
+                        let valA = 0n, valB = 1n;
+                        const t0 = performance.now();
+                        if (c <= 0) valB = 0n;
+                        else if (c === 1) valB = 1n;
+                        else {
+                            for (let i = 2; i <= c; i++) {
+                                if (cancelRequested) break;
+                                const next = BigInt(await addCold(valA, valB, targetBinary));
+                                valA = valB;
+                                valB = next;
+                                ffiCount++;
+                                if (i % 20 === 0) {
+                                    showProgress(`🧊 Cold WASM Fib(${c}) Iterative (${i} / ${c})...`, Math.floor((i / c) * 100));
+                                    await new Promise(r => setTimeout(r, 0));
+                                }
+                            }
+                        }
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = valB;
+                        const isVerified = (finalRes === expected && !cancelRequested);
+                        addTableRow(opLabel, `${execLabel} (JS Loop + Cold WASM Add)`, `N=${c} (${ffiCount.toLocaleString()} Cold Add Calls)`, totalMs, ffiCount > 0 ? (totalMs * 1000000 / ffiCount) : 0, getHeapStr(), finalRes, cancelRequested ? 'warn' : (isVerified ? 'pass' : 'fail'), cancelRequested ? '⏹️ Cancelled' : (isVerified ? '✓ Verified' : '❌ Mismatch'));
+                    }
+                    return;
+                }
+
+                // --- WORKLOAD 3: SCALAR ADDITION ---
+                if (op === 'add') {
+                    let isVerified = false;
+                    if (exec === 'wasm_internal' || exec === 'wasm_iter_cached') {
+                        const t0 = performance.now();
+                        const res = await add(a, b, targetBinary);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = res;
+                        isVerified = (Number(res) === (a + b));
+                    } else if (exec === 'wasm_iter_cold') {
+                        const t0 = performance.now();
+                        const res = await addCold(a, b, targetBinary);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = res;
+                        isVerified = (Number(res) === (a + b));
+                    } else {
+                        const t0 = performance.now();
+                        const res = (BigInt(a) + BigInt(b));
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = res;
+                        isVerified = (res === BigInt(a + b));
+                    }
+                    addTableRow(opLabel, execLabel, `A=${a}, B=${b}`, totalMs, totalMs * 1000000, getHeapStr(), finalRes, isVerified ? 'pass' : 'fail', isVerified ? '✓ Verified' : '❌ Mismatch');
+                    return;
+                }
+
+                // --- WORKLOAD 4: PRIME NUMBERS (Find Largest Prime <= Limit) ---
+                if (op === 'primes') {
+                    if (exec === 'wasm_internal') {
+                        showProgress(`🔢 Finding largest prime ≤ ${c.toLocaleString()} in WASM memory (${targetBinary})...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        const res = await findLastPrime(c, targetBinary);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = res;
+                    } else if (exec === 'js_pure') {
+                        showProgress(`🚀 Finding largest prime ≤ ${c.toLocaleString()} in V8 JIT...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        let last = 0n;
+                        const bigLimit = BigInt(c);
+                        for (let i = 2n; i <= bigLimit; i++) {
+                            if (jsIsPrime(i)) last = i;
+                        }
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = last;
+                    } else if (exec === 'wasm_iter_cached') {
+                        showProgress(`🔄 Executing ${c.toLocaleString()} WASM isPrime(i) cached calls (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        let last = 0;
+                        let executed = 0;
+                        const chunkSize = 5000;
+                        const t0 = performance.now();
+                        for (let i = 2; i <= c; i++) {
+                            if (cancelRequested) break;
+                            if (await isPrime(i, targetBinary)) last = i;
+                            executed = i;
+                            if (i % chunkSize === 0) {
+                                showProgress(`🔄 WASM isPrime(i) cached (${i.toLocaleString()} / ${c.toLocaleString()})...`, Math.floor((i / c) * 100));
+                                await new Promise(r => setTimeout(r, 0));
+                            }
+                        }
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = last;
+                        addTableRow(opLabel, `${execLabel} (1..${executed})`, `Limit=${executed.toLocaleString()}`, totalMs, (totalMs * 1000000 / executed), getHeapStr(), finalRes, cancelRequested ? 'warn' : 'pass', cancelRequested ? '⏹️ Cancelled' : '🔍 To Check');
+                        return;
+                    } else { // cold
+                        showProgress(`🧊 Executing ${c.toLocaleString()} WASM cold re-instantiations (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        let last = 0;
+                        let executed = 0;
+                        const chunkSize = 50;
+                        const t0 = performance.now();
+                        for (let i = 2; i <= c; i++) {
+                            if (cancelRequested) break;
+                            if (await isPrimeCold(i, targetBinary)) last = i;
+                            executed = i;
+                            if (i % chunkSize === 0) {
+                                showProgress(`🧊 WASM cold re-instantiations (${i.toLocaleString()} / ${c.toLocaleString()})...`, Math.floor((i / c) * 100));
+                                await new Promise(r => setTimeout(r, 0));
+                            }
+                        }
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = last || 'Interrupted';
+                        addTableRow(opLabel, `${execLabel} (1..${executed})`, `Limit=${executed.toLocaleString()}`, totalMs, (totalMs * 1000000 / executed), getHeapStr(), finalRes, cancelRequested ? 'warn' : 'pass', cancelRequested ? '⏹️ Cancelled' : '🔍 To Check');
+                        return;
+                    }
+                    addTableRow(opLabel, execLabel, `Limit=${c.toLocaleString()}`, totalMs, (totalMs * 1000000 / c), getHeapStr(), finalRes, 'warn', '🔍 To Check');
+                    return;
+                }
+
+                // --- WORKLOAD 5: ARITHMETIC SEQUENCE ---
+                if (op === 'sequence') {
+                    const bigU0 = BigInt(a);
+                    const bigB = BigInt(b);
+                    const expectedBig = bigU0 + BigInt(c) * bigB;
+                    let isVerified = false;
+
+                    if (exec === 'wasm_internal') {
+                        showProgress(`⚡ Computing Sequence U_C in WASM memory (${targetBinary})...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        const t0 = performance.now();
+                        const res = await computeSequence(a, b, c, targetBinary);
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = BigInt(res);
+                        isVerified = (finalRes === expectedBig);
+                    } else if (exec === 'js_pure') {
+                        showProgress(`🚀 Computing Sequence U_C in V8 JIT...`, 50);
+                        await new Promise(r => setTimeout(r, 20));
+                        let curr = bigU0;
+                        const t0 = performance.now();
+                        for (let i = 0; i < c; i++) {
+                            curr += bigB;
+                        }
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = curr;
+                        isVerified = (finalRes === expectedBig);
+                    } else if (exec === 'wasm_iter_cached') {
+                        showProgress(`🔄 Executing ${c.toLocaleString()} WASM add() cached FFI calls (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        let curr = a;
+                        let executed = 0;
+                        const chunkSize = 10000;
+                        const t0 = performance.now();
+                        for (let i = 0; i < c; i++) {
+                            if (cancelRequested) break;
+                            curr = await add(curr, b, targetBinary);
+                            executed = i + 1;
+                            if (i > 0 && i % chunkSize === 0) {
+                                showProgress(`🔄 WASM add() cached FFI (${i.toLocaleString()} / ${c.toLocaleString()})...`, Math.floor((i / c) * 100));
+                                await new Promise(r => setTimeout(r, 0));
+                            }
+                        }
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = BigInt(curr);
+                        isVerified = (finalRes === expectedBig && !cancelRequested);
+                        addTableRow(opLabel, `${execLabel} (1..${executed})`, `U₀=${a}, B=${b}, C=${executed.toLocaleString()}`, totalMs, (totalMs * 1000000 / executed), getHeapStr(), finalRes, cancelRequested ? 'warn' : (isVerified ? 'pass' : 'fail'), cancelRequested ? '⏹️ Cancelled' : (isVerified ? '✓ Verified' : '❌ Mismatch'));
+                        return;
+                    } else { // cold
+                        showProgress(`🧊 Executing ${c.toLocaleString()} WASM cold re-instantiations (${targetBinary})...`, 0);
+                        await new Promise(r => setTimeout(r, 20));
+                        let curr = a;
+                        let executed = 0;
+                        const t0 = performance.now();
+                        for (let i = 0; i < c; i++) {
+                            if (cancelRequested) break;
+                            curr = await addCold(curr, b, targetBinary);
+                            executed = i + 1;
+                            if (i % 20 === 0) {
+                                showProgress(`🧊 Cold WASM re-instantiations (${i.toLocaleString()} / ${c.toLocaleString()})...`, Math.floor((i / c) * 100));
+                                await new Promise(r => setTimeout(r, 0));
+                            }
+                        }
+                        const t1 = performance.now();
+                        totalMs = (t1 - t0);
+                        finalRes = BigInt(curr);
+                        const expectedCold = bigU0 + BigInt(executed) * bigB;
+                        isVerified = (finalRes === expectedCold && !cancelRequested);
+                        addTableRow(opLabel, `${execLabel} (1..${executed})`, `U₀=${a}, B=${b}, C=${executed.toLocaleString()}`, totalMs, (totalMs * 1000000 / executed), getHeapStr(), finalRes, cancelRequested ? 'warn' : (isVerified ? 'pass' : 'fail'), cancelRequested ? '⏹️ Cancelled' : (isVerified ? '✓ Verified' : '❌ Mismatch'));
+                        return;
+                    }
+                    addTableRow(opLabel, execLabel, `U₀=${a}, B=${b}, C=${c.toLocaleString()}`, totalMs, (totalMs * 1000000 / c), getHeapStr(), finalRes, isVerified ? 'pass' : 'fail', isVerified ? '✓ Verified' : '❌ Mismatch');
+                }
+            } finally {
+                hideProgress();
+                setUiLocked(false);
+            }
+        });
+
+        clearTableBtn.addEventListener('click', () => {
+            historyTableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                        No runs recorded yet. Configure parameters and click <strong>Execute Operation</strong>.
+                    </td>
+                </tr>
+            `;
+            isHistoryEmpty = true;
+            runCounter = 0;
+        });
+    </script>
+</body>
+</html>
