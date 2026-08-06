@@ -68,7 +68,7 @@ Copyright &copy; 2026 ouvrage.io/labs
 #
 # Read more: https://zensical.org/docs/customization/#additional-javascript
 extra_javascript = [
-  "javascripts/katex.js",
+  "assets/javascripts/katex.js",
   "https://unpkg.com/katex@0/dist/katex.min.js",
   "https://unpkg.com/katex@0/dist/contrib/auto-render.min.js",
 ]

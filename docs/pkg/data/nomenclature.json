@@ -1,0 +1,30 @@
+{
+  "toolchains": {
+    "A": { "name": "WASM v0 TinyGo (none)", "target": "v0-tiny", "options": "-scheduler=none" },
+    "B": { "name": "WASM v0 TinyGo (asyncify)", "target": "v0-tiny", "options": "-scheduler=asyncify" },
+    "C": { "name": "WASM v0 Legacy (Standard Go)", "target": "v0-legacy", "options": "syscall/js" },
+    "D": { "name": "WASI v1 TinyGo", "target": "v1-tiny", "options": "" },
+    "E": { "name": "WASI v1 Standard Go", "target": "v1-standard", "options": "" },
+    "F": { "name": "WASI v2 TinyGo Component", "target": "v2-tiny", "options": "WIT Canonical ABI" },
+    "G": { "name": "WASI v2 Standard Go Component", "target": "v2-standard", "options": "WIT Canonical ABI" },
+    "H": { "name": "Pure Host Native", "target": "pure", "options": "No WebAssembly" }
+  },
+  "languages": {
+    "1": { "name": "JavaScript (Browser / Node.js)" },
+    "2": { "name": "Python" }
+  },
+  "functions": {
+    "A": { "name": "Add", "focus": "FFI Overhead & Latency" },
+    "B": { "name": "ComputeSequence", "focus": "Loop Induction & SCEV" },
+    "C": { "name": "FindLastPrime", "focus": "Raw CPU-bound Trial Division" },
+    "D": { "name": "ConcurrentCountPrimes", "focus": "Concurrency Scheduling" },
+    "E": { "name": "Fibonacci", "focus": "Register & Simple Arithmetic Loop" },
+    "F": { "name": "FibonacciRecursive", "focus": "Call Stack Depth Pressure" }
+  },
+  "modes": {
+    "1": { "name": "WASM Internal", "desc": "Single FFI call executing entire loop in guest" },
+    "2": { "name": "Pure Host JIT/Interpreter", "desc": "No WebAssembly involved" },
+    "3": { "name": "N Calls WASM (Cached Instance)", "desc": "Host loop driving warm guest FFI" },
+    "4": { "name": "N Calls WASM (Cold Re-Instantiation)", "desc": "Host loop compiling guest every iteration" }
+  }
+}
