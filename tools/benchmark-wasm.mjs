@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { add, isPrime, countPrimes, findLastPrime, fibonacciRecursive, getWasmByteSize } from '../bindings/js/v0/tiny/my_lib/index.js';
+import { add, isPrime, countPrimes, findLastPrime, fibonacciRecursive, getWasmByteSize } from '../bindings/my_lib_maths/js/v0/tiny/my_lib_maths/index.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -125,7 +125,7 @@ async function runBenchmark(limit = 500000) {
   console.table(report.results);
 
   // Save to JSON and CSV
-  const outDir = path.resolve('bindings/build/reports');
+  const outDir = path.resolve('bindings/my_lib_maths/build/reports');
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
   }

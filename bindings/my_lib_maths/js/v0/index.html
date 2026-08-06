@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASM Polyglot Benchmark Studio - v0 Unified Lab</title>
+    
+    <!-- Google Fonts & KaTeX for math styling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            --bg-base: #0f172a;       /* Slate 900 - Industrial Dark Slate */
+            --bg-surface: #1e293b;    /* Slate 800 */
+            --bg-surface-hover: #334155;
+            --border-glow: #334155;   /* Slate 700 - Flat thin borders */
+            --border-glow-focus: #475569; /* Slate 600 */
+            --text-primary: #f8fafc;  /* Slate 50 */
+            --text-muted: #94a3b8;    /* Slate 400 */
+            
+            --accent-blue: #2563eb;   /* Engineering blue */
+            --accent-blue-hover: #1d4ed8;
+            
+            --status-pass: #10b981;
+            --status-warn: #f59e0b;
+            --status-fail: #ef4444;
+            
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            padding: 2.5rem;
+            min-height: 100vh;
+        }
+
+        .studio-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border-glow);
+            padding-bottom: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        /* Scientific Panel Layout */
+        .glass-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Configuration Layout: Row 1 (Toolchain & Function) */
+        .config-row-primary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Configuration Layout: Row 2 (Parameters) */
+        .config-row-secondary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        select, input {
+            background: #0f172a;
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 0.65rem 0.85rem;
+            font-family: var(--font-sans);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--border-glow-focus);
+        }
+
+        input:disabled, select:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Badges & Info Area */
+        .info-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .badge-container {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glow);
+            color: var(--text-muted);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            font-family: var(--font-mono);
+        }
+
+        /* Control Buttons */
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            font-family: var(--font-sans);
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-blue-hover);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--status-fail);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.18);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-glow);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Progress Bar */
+        .progress-box {
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .progress-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-blue);
+            border-radius: 2px;
+            transition: width 0.1s ease;
+        }
+
+        /* History Table Panel */
+        .table-panel {
+            overflow-x: auto;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.85rem;
+            border-bottom: 2px solid var(--border-glow);
+        }
+
+        td {
+            padding: 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .cell-mono {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pass { background: rgba(16, 185, 129, 0.08); color: var(--status-pass); border: 1px solid rgba(16, 185, 129, 0.15); }
+        .status-warn { background: rgba(245, 158, 11, 0.08); color: var(--status-warn); border: 1px solid rgba(245, 158, 11, 0.15); }
+        .status-fail { background: rgba(239, 68, 68, 0.08); color: var(--status-fail); border: 1px solid rgba(239, 68, 68, 0.15); }
+
+        .explanation {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .explanation strong {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="studio-container">
+    <header>
+        <h1>WASM Polyglot Benchmark Studio</h1>
+        <p class="subtitle">Unified V0 Control Center (TinyGo / Standard Go / Native JS)</p>
+    </header>
+
+    <!-- Lab Controls Panel -->
+    <div class="glass-panel">
+        <!-- Row 1: Toolchain and Function Selectors -->
+        <div class="config-row-primary">
+            <div class="form-group">
+                <label for="toolchainSelect">Toolchain / Runtime</label>
+                <select id="toolchainSelect">
+                    <option value="A">TinyGo MVP (none) [A]</option>
+                    <option value="B">TinyGo Asyncify [B]</option>
+                    <option value="C">Standard Go (syscall/js) [C]</option>
+                    <option value="H">Pure Host Native (V8 JIT) [H]</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="opSelect">Workload Function</label>
+                <select id="opSelect">
+                    <option value="add">Add (A + B)</option>
+                    <option value="sequence">Arithmetic Sequence</option>
+                    <option value="primes">Prime Numbers</option>
+                    <option value="concurrent_primes">Concurrent Primes</option>
+                    <option value="fibonacci_iter">Fibonacci (Iterative)</option>
+                    <option value="fibonacci_rec">Fibonacci (Recursive)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Row 2: Parameters (A, B, C) -->
+        <div class="config-row-secondary">
+            <div class="form-group">
+                <label id="labelA" for="valA">Operand A</label>
+                <input type="number" id="valA" value="10">
+            </div>
+
+            <div class="form-group">
+                <label id="labelB" for="valB">Operand B</label>
+                <input type="number" id="valB" value="20">
+            </div>
+
+            <div class="form-group">
+                <label id="labelC" for="valC">Repeat Count C</label>
+                <input type="number" id="valC" value="10000">
+            </div>
+        </div>
+
+        <!-- Run Trigger Controls -->
+        <div class="btn-container">
+            <button class="btn-primary" id="runBenchBtn">Execute Workload</button>
+            <button class="btn-danger" id="cancelBenchBtn" disabled>🛑 Cancel Run</button>
+        </div>
+
+        <!-- Progress Tracking -->
+        <div class="progress-box" id="progressBox">
+            <div class="progress-text" id="progressText">Starting runner...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+        </div>
+
+        <!-- Live Metrics Badges -->
+        <div class="info-row">
+            <div class="badge-container">
+                <div class="badge" id="wasmSizeBadge">WASM size: N/A</div>
+                <div class="badge" id="wasmFetchBadge">Fetch cost: N/A</div>
+                <div class="badge" id="wasmCompileBadge">Compile cost: N/A</div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+                Namespace: <span style="font-family: var(--font-mono); color: var(--text-primary);">my_lib_maths</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Log Table -->
+    <div class="glass-panel table-panel">
+        <div class="panel-header">
+            <h2>📊 Comparative Benchmark History</h2>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; font-weight: 500;" id="exportCsvBtn">CSV</button>
+                <button class="btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; font-weight: 500;" id="exportJsonBtn">JSON</button>
+                <button class="btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; font-weight: 500;" id="clearTableBtn">Clear</button>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nomenclature</th>
+                    <th>Runtime</th>
+                    <th>Function</th>
+                    <th>Parameters</th>
+                    <th>Duration</th>
+                    <th>Avg (FFI)</th>
+                    <th>Heap Delta</th>
+                    <th>Result</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody">
+                <tr>
+                    <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                        No runs recorded yet. Configure parameters and click <strong>Execute Workload</strong>.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="explanation">
+            <strong>Unified Lab Features & Notes:</strong><br/>
+            • <strong>Dynamic Imports:</strong> Runtimes are loaded dynamically via ES Module imports only when selected.<br/>
+            • <strong>Nomenclature Mapping:</strong> Runs are tagged according to the specification defined inside <code>nomenclature.json</code> (e.g. <code>V[A-H]-L1-F[A-F]-M[1-4]</code>).<br/>
+            • <strong>Cross-Runtime Comparison:</strong> Compare the performance of the exact same algorithm executed natively in V8 vs compiled Go WASM.
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // Load nomenclature definition statically for UI mapping
+    let nomenclatureData = null;
+    try {
+        const response = await fetch('../../pkg/data/nomenclature.json');
+        nomenclatureData = await response.json();
+    } catch (e) {
+        console.error("Failed to load nomenclature schema:", e);
+    }
+
+    const toolchainSelect = document.getElementById('toolchainSelect');
+    const opSelect = document.getElementById('opSelect');
+    const valAInput = document.getElementById('valA');
+    const valBInput = document.getElementById('valB');
+    const valCInput = document.getElementById('valC');
+    const labelA = document.getElementById('labelA');
+    const labelB = document.getElementById('labelB');
+    const labelC = document.getElementById('labelC');
+    
+    const runBenchBtn = document.getElementById('runBenchBtn');
+    const cancelBenchBtn = document.getElementById('cancelBenchBtn');
+    const clearTableBtn = document.getElementById('clearTableBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    
+    const historyTableBody = document.getElementById('historyTableBody');
+    const wasmSizeBadge = document.getElementById('wasmSizeBadge');
+    const wasmFetchBadge = document.getElementById('wasmFetchBadge');
+    const wasmCompileBadge = document.getElementById('wasmCompileBadge');
+    
+    const progressBox = document.getElementById('progressBox');
+    const progressText = document.getElementById('progressText');
+    const progressBarFill = document.getElementById('progressBarFill');
+
+    let runCounter = 0;
+    let isHistoryEmpty = true;
+    let cancelRequested = false;
+    const sessionHistory = [];
+
+    // Form inputs visibility update
+    function updateContextLabels() {
+        const op = opSelect.value;
+        if (op === 'primes') {
+            labelA.innerText = 'Unused';
+            labelB.innerText = 'Test Number B';
+            labelC.innerText = 'Prime Search Limit C';
+            valAInput.disabled = true;
+            valBInput.disabled = false;
+            valCInput.disabled = false;
+        } else if (op === 'concurrent_primes') {
+            labelA.innerText = 'Worker Count K';
+            labelB.innerText = 'Unused';
+            labelC.innerText = 'Prime Search Limit C';
+            valAInput.disabled = false;
+            valBInput.disabled = true;
+            valCInput.disabled = false;
+        } else if (op === 'fibonacci_rec') {
+            labelA.innerText = 'Unused';
+            labelB.innerText = 'Unused';
+            labelC.innerText = 'Recursive Term N';
+            valAInput.disabled = true;
+            valBInput.disabled = true;
+            valCInput.disabled = false;
+            if (parseInt(valCInput.value, 10) > 30) valCInput.value = 25;
+        } else if (op === 'fibonacci_iter') {
+            labelA.innerText = 'Unused';
+            labelB.innerText = 'Unused';
+            labelC.innerText = 'Iterative Term N';
+            valAInput.disabled = true;
+            valBInput.disabled = true;
+            valCInput.disabled = false;
+        } else if (op === 'sequence') {
+            labelA.innerText = 'Initial Term U₀';
+            labelB.innerText = 'Common Difference B';
+            labelC.innerText = 'Iterations C';
+            valAInput.disabled = false;
+            valBInput.disabled = false;
+            valCInput.disabled = false;
+        } else {
+            // add
+            labelA.innerText = 'Operand A';
+            labelB.innerText = 'Operand B';
+            labelC.innerText = 'Repeat Count C';
+            valAInput.disabled = false;
+            valBInput.disabled = false;
+            valCInput.disabled = false;
+        }
+    }
+
+    opSelect.addEventListener('change', updateContextLabels);
+    updateContextLabels();
+
+    cancelBenchBtn.addEventListener('click', () => {
+        cancelRequested = true;
+        progressText.innerText = '⏹️ Cancelling runner...';
+    });
+
+    function setUiLocked(locked) {
+        toolchainSelect.disabled = locked;
+        opSelect.disabled = locked;
+        valAInput.disabled = locked || opSelect.value === 'primes' || opSelect.value.startsWith('fibonacci');
+        valBInput.disabled = locked || opSelect.value.startsWith('fibonacci') || opSelect.value === 'concurrent_primes';
+        valCInput.disabled = locked;
+        runBenchBtn.disabled = locked;
+        cancelBenchBtn.disabled = !locked;
+        clearTableBtn.disabled = locked;
+    }
+
+    function showProgress(text, pct = 0) {
+        progressBox.style.display = 'flex';
+        progressText.innerText = text;
+        progressBarFill.style.width = `${pct}%`;
+    }
+
+    function hideProgress() {
+        progressBox.style.display = 'none';
+        progressBarFill.style.width = '0%';
+        cancelRequested = false;
+    }
+
+    function getHeapBytes() {
+        if (window.performance && window.performance.memory) {
+            return window.performance.memory.usedJSHeapSize;
+        }
+        return null;
+    }
+
+    // Dynamic Module Loader Adapter
+    async function getModuleFunctions(toolchain) {
+        if (toolchain === 'H') {
+            const module = await import('../../pkg/js/maths.js');
+            return {
+                add: module.jsAdd,
+                addCold: module.jsAdd,
+                computeSequence: module.jsComputeSequence,
+                isPrime: module.jsIsPrime,
+                isPrimeCold: module.jsIsPrime,
+                countPrimes: module.jsCountPrimes,
+                concurrentCountPrimes: module.jsConcurrentCountPrimes,
+                findLastPrime: module.jsFindLastPrime,
+                fibonacci: module.jsFibonacciIterative,
+                fibonacciRecursive: module.jsFibonacciRecursive,
+                fibonacciRecursiveCold: module.jsFibonacciRecursive,
+                getWasmByteSize: async () => 0,
+                getWasmFetchDuration: async () => 0,
+                getWasmCompileDuration: async () => 0
+              };
+        } else if (toolchain === 'A' || toolchain === 'B') {
+            const module = await import('./tiny/my_lib_maths/index.js');
+            const wasmBinary = toolchain === 'B' ? 'my_lib_maths_asyncify.wasm' : 'my_lib_maths.wasm';
+            return {
+                add: (a, b) => module.add(a, b, wasmBinary),
+                addCold: (a, b) => module.addCold(a, b, wasmBinary),
+                computeSequence: (u0, b, n) => module.computeSequence(u0, b, n, wasmBinary),
+                isPrime: (n) => module.isPrime(n, wasmBinary),
+                isPrimeCold: (n) => module.isPrimeCold(n, wasmBinary),
+                countPrimes: (limit) => module.countPrimes(limit, wasmBinary),
+                concurrentCountPrimes: (limit, numWorkers) => module.concurrentCountPrimes(limit, numWorkers, wasmBinary),
+                findLastPrime: (limit) => module.findLastPrime(limit, wasmBinary),
+                fibonacci: (n) => module.fibonacci(n, wasmBinary),
+                fibonacciRecursive: (n) => module.fibonacciRecursive(n, wasmBinary),
+                fibonacciRecursiveCold: (n) => module.fibonacciRecursiveCold(n, wasmBinary),
+                getWasmByteSize: () => module.getWasmByteSize(wasmBinary),
+                getWasmFetchDuration: () => module.getWasmFetchDuration(),
+                getWasmCompileDuration: () => module.getWasmCompileDuration()
+            };
+        } else if (toolchain === 'C') {
+            const module = await import('./legacy/my_lib_maths/index.js');
+            return {
+                add: (a, b) => module.add(a, b),
+                addCold: (a, b) => { throw new Error("Cold re-instantiation not supported in legacy Go"); },
+                computeSequence: (u0, b, n) => module.computeSequence(u0, b, n),
+                isPrime: (n) => module.isPrime(n),
+                isPrimeCold: (n) => { throw new Error("Cold re-instantiation not supported in legacy Go"); },
+                countPrimes: (limit) => module.countPrimes(limit),
+                concurrentCountPrimes: (limit, numWorkers) => module.concurrentCountPrimes(limit, numWorkers),
+                findLastPrime: (limit) => module.findLastPrime(limit),
+                fibonacci: (n) => module.fibonacci(n),
+                fibonacciRecursive: (n) => module.fibonacciRecursive(n),
+                fibonacciRecursiveCold: (n) => { throw new Error("Cold re-instantiation not supported in legacy Go"); },
+                getWasmByteSize: () => module.getWasmByteSize(),
+                getWasmFetchDuration: () => module.getWasmFetchDuration(),
+                getWasmCompileDuration: () => module.getWasmCompileDuration()
+            };
+        }
+    }
+
+    // Add row to UI log table
+    function addTableRow(nomenclatureCode, toolchainName, opName, params, duration, avgNs, heapDelta, result, status) {
+        if (isHistoryEmpty) {
+            historyTableBody.innerHTML = '';
+            isHistoryEmpty = false;
+        }
+
+        runCounter++;
+        let pillClass = 'status-pass';
+        if (status === 'Cancelled' || status === 'Skipped') pillClass = 'status-warn';
+        if (status.startsWith('Error')) pillClass = 'status-fail';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${runCounter}</td>
+            <td class="cell-mono">${nomenclatureCode}</td>
+            <td><strong>${toolchainName}</strong></td>
+            <td><code>${opName}</code></td>
+            <td style="font-size:0.85rem; color:var(--text-muted);">${params}</td>
+            <td class="cell-mono">${duration.toFixed(2)} ms</td>
+            <td class="cell-mono">${avgNs ? avgNs.toFixed(0) + ' ns' : 'N/A'}</td>
+            <td class="cell-mono">${heapDelta}</td>
+            <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${result}">${result}</td>
+            <td><span class="status-pill ${pillClass}">${status}</span></td>
+        `;
+        historyTableBody.appendChild(row);
+    }
+
+    runBenchBtn.addEventListener('click', async () => {
+        const toolchain = toolchainSelect.value;
+        const op = opSelect.value;
+        const a = parseInt(valAInput.value, 10);
+        const b = parseInt(valBInput.value, 10);
+        const c = parseInt(valCInput.value, 10);
+
+        setUiLocked(true);
+        cancelRequested = false;
+
+        const heapBefore = getHeapBytes();
+        const t0 = performance.now();
+
+        try {
+            showProgress('Loading dynamic module...', 20);
+            const api = await getModuleFunctions(toolchain);
+
+            // Update badges for metrics
+            const byteSize = await api.getWasmByteSize();
+            if (byteSize > 0) {
+                wasmSizeBadge.innerText = `WASM size: ${(byteSize / 1024).toFixed(1)} KB`;
+                const fetchMs = await api.getWasmFetchDuration();
+                wasmFetchBadge.innerText = `Fetch: ${fetchMs.toFixed(1)} ms`;
+                const compileMs = await api.getWasmCompileDuration();
+                wasmCompileBadge.innerText = `Compile: ${compileMs.toFixed(1)} ms`;
+            } else {
+                wasmSizeBadge.innerText = 'WASM size: N/A';
+                wasmFetchBadge.innerText = 'Fetch: N/A';
+                wasmCompileBadge.innerText = 'Compile: N/A';
+            }
+
+            let result = null;
+            let executedCalls = 1;
+            let nomenclatureMode = '1'; // Default: WASM Internal
+
+            showProgress('Executing computation...', 50);
+
+            if (op === 'add') {
+                if (toolchain === 'H') {
+                    nomenclatureMode = '2'; // Native Host
+                    for (let i = 0; i < c; i++) {
+                        result = api.add(a, b);
+                    }
+                } else {
+                    nomenclatureMode = '3'; // Cached FFI calls
+                    for (let i = 0; i < c; i++) {
+                        if (cancelRequested) break;
+                        result = await api.add(a, b);
+                    }
+                }
+                executedCalls = c;
+            } else if (op === 'sequence') {
+                if (toolchain === 'H') {
+                    nomenclatureMode = '2';
+                    result = api.computeSequence(a, b, c);
+                } else {
+                    nomenclatureMode = '1'; // Loop internal to WASM
+                    result = await api.computeSequence(a, b, c);
+                }
+            } else if (op === 'primes') {
+                if (toolchain === 'H') {
+                    nomenclatureMode = '2';
+                    result = api.findLastPrime(c);
+                } else {
+                    nomenclatureMode = '1';
+                    result = await api.findLastPrime(c);
+                }
+            } else if (op === 'concurrent_primes') {
+                nomenclatureMode = '1';
+                result = await api.concurrentCountPrimes(c, a);
+            } else if (op === 'fibonacci_iter') {
+                if (toolchain === 'H') {
+                    nomenclatureMode = '2';
+                    result = api.fibonacci(c);
+                } else {
+                    nomenclatureMode = '1';
+                    result = await api.fibonacci(c);
+                }
+            } else if (op === 'fibonacci_rec') {
+                if (toolchain === 'H') {
+                    nomenclatureMode = '2';
+                    result = api.fibonacciRecursive(c);
+                } else {
+                    nomenclatureMode = '3'; // Recursive calling FFI
+                    result = await api.fibonacciRecursive(c);
+                }
+            }
+
+            const t1 = performance.now();
+            const durationMs = t1 - t0;
+            const heapAfter = getHeapBytes();
+            const heapDeltaMb = heapBefore && heapAfter ? ((heapAfter - heapBefore) / (1024 * 1024)).toFixed(2) + ' MB' : 'N/A';
+            const avgNs = executedCalls > 1 ? (durationMs * 1000000) / executedCalls : null;
+
+            // Generate Nomenclature code: V<Toolchain>-L1-F<Func>-M<Mode>
+            const fCode = op === 'add' ? 'A' : (op === 'sequence' ? 'B' : (op === 'primes' ? 'C' : (op === 'concurrent_primes' ? 'D' : (op === 'fibonacci_iter' ? 'E' : 'F'))));
+            const nomenclatureCode = `V${toolchain}-L1-F${fCode}-M${nomenclatureMode}`;
+
+            const toolchainLabel = nomenclatureData ? nomenclatureData.toolchains[toolchain].name : toolchain;
+            const opLabel = nomenclatureData ? nomenclatureData.functions[fCode].name : op;
+
+            const paramsString = op === 'add' ? `A=${a}, B=${b}, N=${c}` : `Limit=${c}`;
+
+            const runRecord = {
+                id: runCounter + 1,
+                nomenclature: nomenclatureCode,
+                runtime: toolchainLabel,
+                func: opLabel,
+                params: paramsString,
+                durationMs: durationMs,
+                avgNs: avgNs,
+                heapDelta: heapDeltaMb,
+                result: String(result),
+                status: cancelRequested ? 'Cancelled' : 'Success'
+            };
+            sessionHistory.push(runRecord);
+
+            addTableRow(
+                nomenclatureCode,
+                toolchainLabel,
+                opLabel,
+                paramsString,
+                durationMs,
+                avgNs,
+                heapDeltaMb,
+                String(result),
+                cancelRequested ? 'Cancelled' : 'Success'
+            );
+
+        } catch (err) {
+            console.error(err);
+            addTableRow('V' + toolchain + '-ERR', toolchain, op, `A=${a}, B=${b}, C=${c}`, 0, 0, 'N/A', 'N/A', 'Error: ' + err.message);
+        } finally {
+            hideProgress();
+            setUiLocked(false);
+            updateContextLabels();
+        }
+    });
+
+    clearTableBtn.addEventListener('click', () => {
+        historyTableBody.innerHTML = `
+            <tr>
+                <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                    No runs recorded yet. Configure parameters and click <strong>Execute Workload</strong>.
+                </td>
+            </tr>
+        `;
+        isHistoryEmpty = true;
+        runCounter = 0;
+        sessionHistory.length = 0;
+    });
+
+    // Exports formats
+    exportCsvBtn.addEventListener('click', () => {
+        if (sessionHistory.length === 0) return alert('No runs in history to export.');
+        const headers = 'id,nomenclature,runtime,func,params,durationMs,avgNs,heapDelta,result,status\n';
+        const rows = sessionHistory.map(r => 
+            `"${r.id}","${r.nomenclature}","${r.runtime}","${r.func}","${r.params}",${r.durationMs.toFixed(2)},${r.avgNs ? r.avgNs.toFixed(0) : 'null'},"${r.heapDelta}","${r.result}","${r.status}"`
+        ).join('\n');
+        
+        const blob = new Blob([headers + rows], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `benchmark_summary_${Date.now()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    exportJsonBtn.addEventListener('click', () => {
+        if (sessionHistory.length === 0) return alert('No runs in history to export.');
+        const dataStr = JSON.stringify(sessionHistory, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `benchmark_summary_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+</script>
+</body>
+</html>

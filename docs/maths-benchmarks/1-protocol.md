@@ -29,8 +29,8 @@ We selected six functions from our Go codebase to capture different aspects of C
 ## 2. Pure Host Baselines (JS & Python Controls)
 
 To establish a strict scientific comparison, the exact mathematical logic of `pkg/maths/maths.go` is duplicated line-for-line in host-native languages:
-* Pure JavaScript: [`bindings/js/pkg/maths.js`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/js/pkg/maths.js) (executing inside the V8 JIT compiler engine).
-* Pure Python: `bindings/py/pkg/maths.py` (executing inside the CPython interpreter, with future comparisons targeting NumPy and Numba JIT).
+* Pure JavaScript: [`bindings/my_lib_maths/js/pkg/maths.js`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/my_lib_maths/js/pkg/maths.js) (executing inside the V8 JIT compiler engine).
+* Pure Python: `bindings/my_lib_maths/py/pkg/maths.py` (executing inside the CPython interpreter, with future comparisons targeting NumPy and Numba JIT).
 
 ---
 
@@ -580,29 +580,28 @@ func FibonacciRecursive(n int64) int64 {
 
 ## 7. Repository Layout & Build Pipeline
 
-To help the reader navigate the codebase, here is the official mapping of directory patterns and compilation flows driven by our `Makefile`:
+To help the reader navigate the codebase, here is the official mapping of directory patterns and compilation flows driven by our namespaced structure:
 
 ### A. Source Code Mappings
 * **Guest Domain Logic (Go)**: [`pkg/maths/maths.go`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/pkg/maths/maths.go) contains the pure mathematical functions shared across all environments.
 * **Guest WASM Entry Points**:
-  * `v0-tiny`: [`bindings/wasm/v0/tiny/main.go`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/wasm/v0/tiny/main.go) compiles domain functions with TinyGo attributes (`//export`).
-  * `v0-legacy`: [`bindings/wasm/v0/legacy/main.go`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/wasm/v0/legacy/main.go) compiles using the Go official `syscall/js` API.
-  * `v1`: `bindings/wasm/v1/...` compiles for WASI Preview 1 command-line interface execution.
-  * `v2`: `bindings/wasm/v2/...` compiles Go code into a Component Model using WIT definitions.
+  * `v0-tiny`: [`bindings/my_lib_maths/wasm/tiny/main.go`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/my_lib_maths/wasm/tiny/main.go) compiles domain functions with TinyGo attributes (`//export`).
+  * `v0-legacy`: [`bindings/my_lib_maths/wasm/legacy/main.go`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/my_lib_maths/wasm/legacy/main.go) compiles using the Go official `syscall/js` API.
+  * `v1`: `bindings/my_lib/wasm/v1/...` compiles for WASI Preview 1 command-line interface execution.
+  * `v2`: `bindings/my_lib/wasm/v2/...` compiles Go code into a Component Model using WIT definitions.
 
 ### B. Build Output Mappings
-Running `make build` compiles guest Go files into WebAssembly binaries stored inside `bindings/build/`:
-* **`v0-tiny` outputs**: `bindings/build/v0/tiny/my_lib_maths.wasm` and `my_lib_maths_asyncify.wasm`.
-* **`v0-legacy` output**: `bindings/build/v0/legacy/my_lib_maths.wasm`.
-* **`v1` output**: `bindings/build/v1/my_lib_maths.wasm`.
+Running `make build` compiles guest Go files into WebAssembly binaries stored inside namespaced `build/` directories:
+* **`my_lib_maths` outputs**: `bindings/my_lib_maths/build/v0/tiny/my_lib_maths.wasm` and `my_lib_maths_asyncify.wasm`, and `bindings/my_lib_maths/build/v0/legacy/my_lib_maths.wasm`.
+* **`my_lib` outputs**: `bindings/my_lib/build/v1/my_lib.wasm` and `bindings/my_lib/build/v2/my_lib_component.wasm`.
 
 ### C. Host Distribution & `_generated/` Symlinks
 Each host language (JS, Python) consumes these compiled `.wasm` files from designated directories:
 * **JavaScript Web Browser (Studio)**:
-  * TinyGo: [`bindings/js/v0/tiny/my_lib_maths/`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/js/v0/tiny/my_lib_maths/)
-  * Legacy Go: [`bindings/js/v0/legacy/my_lib_maths/`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/js/v0/legacy/my_lib_maths/)
+  * TinyGo: [`bindings/my_lib_maths/js/v0/tiny/my_lib_maths/`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/my_lib_maths/js/v0/tiny/my_lib_maths/)
+  * Legacy Go: [`bindings/my_lib_maths/js/v0/legacy/my_lib_maths/`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/my_lib_maths/js/v0/legacy/my_lib_maths/)
 * **`_generated/` folders**:
-  The `Makefile` automatically creates a `_generated/` subdirectory inside each host module containing symbolic links pointing back to `bindings/build/` (e.g. `my_lib_maths.wasm -> ../../../../../build/v0/tiny/my_lib_maths.wasm`). This allows the ES Module loaders (`loader.js`) to import compiled bytecodes dynamically.
+  The `Makefile` automatically creates a `_generated/` subdirectory inside each host module containing symbolic links pointing back to `build/` (e.g. `my_lib_maths.wasm -> ../../../../../build/v0/tiny/my_lib_maths.wasm`). This allows the ES Module loaders (`loader.js`) to import compiled bytecodes dynamically.
 
 ---
 

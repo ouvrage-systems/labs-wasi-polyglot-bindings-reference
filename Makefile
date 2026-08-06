@@ -4,24 +4,26 @@ SHELL := /bin/bash
 # Configuration and Paths
 LAB_DIR := $(shell pwd)
 BIN_DIR := $(LAB_DIR)/bin
-BUILD_DIR := bindings/build
-BUILD_V0_DIR := $(LAB_DIR)/bindings/build/v0
+
+# my_lib_maths namespace paths
+MATHS_BINDINGS_DIR := $(LAB_DIR)/bindings/my_lib_maths
+BUILD_V0_DIR := $(MATHS_BINDINGS_DIR)/build/v0
 BUILD_V0_TINY_DIR := $(BUILD_V0_DIR)/tiny
 BUILD_V0_LEGACY_DIR := $(BUILD_V0_DIR)/legacy
 
-
-WIT_DIR := $(LAB_DIR)/bindings/wit
-WASM_DIR := $(LAB_DIR)/bindings/wasm
-PY_V1_DIR := $(LAB_DIR)/bindings/py/v1
-PY_V2_DIR := $(LAB_DIR)/bindings/py/v2
-NODE_V1_DIR := $(LAB_DIR)/bindings/node/v1
-JS_V2_DIR := $(LAB_DIR)/bindings/js/v2
-
-
-
-JS_V0_DIR := $(LAB_DIR)/bindings/js/v0
+JS_V0_DIR := $(MATHS_BINDINGS_DIR)/js/v0
 JS_V0_TINY_DIR := $(JS_V0_DIR)/tiny
 JS_V0_LEGACY_DIR := $(JS_V0_DIR)/legacy
+
+# my_lib namespace paths
+MY_LIB_BINDINGS_DIR := $(LAB_DIR)/bindings/my_lib
+WIT_DIR := $(MY_LIB_BINDINGS_DIR)/wit
+WASM_DIR := $(MY_LIB_BINDINGS_DIR)/wasm
+BUILD_DIR := $(MY_LIB_BINDINGS_DIR)/build
+PY_V1_DIR := $(MY_LIB_BINDINGS_DIR)/py/v1
+PY_V2_DIR := $(MY_LIB_BINDINGS_DIR)/py/v2
+NODE_V1_DIR := $(MY_LIB_BINDINGS_DIR)/node/v1
+JS_V2_DIR := $(MY_LIB_BINDINGS_DIR)/js/v2
 
 # Executables
 WIT_BINDGEN := $(BIN_DIR)/wit-bindgen
@@ -61,33 +63,42 @@ test: run-py-v1 run-py-v2 run-node-v1 run-node-v2
 build-wasm-v0-tiny:
 	@echo "Compiling Go code to pure WASM (v0-tinygo) for browser target..."
 	@mkdir -p $(BUILD_V0_TINY_DIR)
-	@GOWORK=off $(TINYGO) build -scheduler=none -tags noscheduler -o $(BUILD_V0_TINY_DIR)/my_lib_maths.wasm -target=wasm ./bindings/wasm/v0/tiny
-	@GOWORK=off $(TINYGO) build -scheduler=asyncify -o $(BUILD_V0_TINY_DIR)/my_lib_maths_asyncify.wasm -target=wasm ./bindings/wasm/v0/tiny
-	@mkdir -p $(JS_V0_TINY_DIR)/my_lib/_generated
-	@cd $(JS_V0_TINY_DIR)/my_lib/_generated && ln -sf ../../../../../build/v0/tiny/my_lib_maths.wasm .
-	@cd $(JS_V0_TINY_DIR)/my_lib/_generated && ln -sf ../../../../../build/v0/tiny/my_lib_maths_asyncify.wasm .
+	@GOWORK=off $(TINYGO) build -scheduler=none -tags noscheduler -o $(BUILD_V0_TINY_DIR)/my_lib_maths.wasm -target=wasm $(MATHS_BINDINGS_DIR)/wasm/tiny
+	@GOWORK=off $(TINYGO) build -scheduler=asyncify -o $(BUILD_V0_TINY_DIR)/my_lib_maths_asyncify.wasm -target=wasm $(MATHS_BINDINGS_DIR)/wasm/tiny
+	@mkdir -p $(JS_V0_TINY_DIR)/my_lib_maths/_generated
+	@cd $(JS_V0_TINY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/tiny/my_lib_maths.wasm .
+	@cd $(JS_V0_TINY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/tiny/my_lib_maths_asyncify.wasm .
+	@cd $(JS_V0_TINY_DIR)/my_lib_maths && ln -sf ../../../../pkg/js/maths.js maths_native.js
+	@mkdir -p docs/labs/v0
+	@rm -rf docs/labs/v0/tiny
+	@cp -rL $(JS_V0_TINY_DIR) docs/labs/v0/
+	@cp -L $(JS_V0_DIR)/index.html docs/labs/v0/
+	@mkdir -p docs/pkg
+	@cp -rL $(MATHS_BINDINGS_DIR)/pkg/* docs/pkg/
 	@echo "v0-tiny Compilation successful: none     - $(BUILD_V0_TINY_DIR)/my_lib_maths.wasm"
 	@echo "v0-tiny Compilation successful: asyncify - $(BUILD_V0_TINY_DIR)/my_lib_maths_asyncify.wasm"
-
-
 
 build-wasm-v0-legacy:
 	@echo "Compiling Go code to pure WASM (v0-legacy) for browser target..."
 	@mkdir -p $(BUILD_V0_LEGACY_DIR)
-	@GOWORK=off GOOS=js GOARCH=wasm go build -o $(BUILD_V0_LEGACY_DIR)/my_lib_maths.wasm ./bindings/wasm/v0/legacy
-	@mkdir -p $(JS_V0_LEGACY_DIR)/my_lib/_generated
-	@cd $(JS_V0_LEGACY_DIR)/my_lib/_generated && ln -sf ../../../../../build/v0/legacy/my_lib_maths.wasm .
+	@GOWORK=off GOOS=js GOARCH=wasm go build -o $(BUILD_V0_LEGACY_DIR)/my_lib_maths.wasm $(MATHS_BINDINGS_DIR)/wasm/legacy
+	@mkdir -p $(JS_V0_LEGACY_DIR)/my_lib_maths/_generated
+	@cd $(JS_V0_LEGACY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/legacy/my_lib_maths.wasm .
+	@cd $(JS_V0_LEGACY_DIR)/my_lib_maths && ln -sf ../../../../pkg/js/maths.js maths_native.js
+	@mkdir -p docs/labs/v0
+	@rm -rf docs/labs/v0/legacy
+	@cp -rL $(JS_V0_LEGACY_DIR) docs/labs/v0/
+	@cp -L $(JS_V0_DIR)/index.html docs/labs/v0/
+	@mkdir -p docs/pkg
+	@cp -rL $(MATHS_BINDINGS_DIR)/pkg/* docs/pkg/
 	@echo "v0-legacy Compilation successful: $(BUILD_V0_LEGACY_DIR)/my_lib_maths.wasm"
-	@echo "v0-legacy JS lnk = $(JS_V0_LEGACY_DIR)/my_lib/_generated/my_lib_maths.wasm -> bindings/wasm/v0/legacy/my_lib_maths.wasm"
-
 
 build-wasm-v0: build-wasm-v0-tiny build-wasm-v0-legacy
-
 
 build-wasm-v1:
 	@echo "Step 1: Compiling Go code to WASI Preview 1 for v1 package..."
 	@mkdir -p $(BUILD_DIR)/v1
-	@GOWORK=off GOOS=wasip1 GOARCH=wasm go build -o $(BUILD_DIR)/v1/my_lib.wasm ./bindings/wasm/v1
+	@GOWORK=off GOOS=wasip1 GOARCH=wasm go build -o $(BUILD_DIR)/v1/my_lib.wasm $(WASM_DIR)/v1
 	@mkdir -p $(PY_V1_DIR)/my_lib/_generated
 	@cd $(PY_V1_DIR)/my_lib/_generated && ln -sf ../../../../build/v1/my_lib.wasm .
 	@mkdir -p $(NODE_V1_DIR)/my_lib/_generated
@@ -106,7 +117,7 @@ build-wasm-v2:
 	
 	@echo "Step 2: Compiling Go code via TinyGo..."
 	@mkdir -p $(BUILD_DIR)/v2
-	@GOWORK=off $(TINYGO) build -o $(BUILD_DIR)/v2/my_lib_raw.wasm -target=wasi ./bindings/wasm/v2
+	@GOWORK=off $(TINYGO) build -o $(BUILD_DIR)/v2/my_lib_raw.wasm -target=wasi $(WASM_DIR)/v2
 	
 	@echo "Step 3: Embedding WIT metadata..."
 	@$(WASM_TOOLS) component embed $(WIT_DIR) $(BUILD_DIR)/v2/my_lib_raw.wasm \
@@ -156,10 +167,10 @@ run-webpack-sample:
 
 clean:
 	@rm -rf $(BIN_DIR)
-	@rm -rf $(LAB_DIR)/$(BUILD_DIR)
+	@rm -rf $(MY_LIB_BINDINGS_DIR)/build
+	@rm -rf $(MATHS_BINDINGS_DIR)/build
 	@rm -rf $(WASM_DIR)/gen
 	@find $(LAB_DIR)/bindings -name "*.wasm" -delete
 	@rm -rf $(JS_V2_DIR)/my_lib/_generated/interfaces
 	@rm -f $(JS_V2_DIR)/my_lib/_generated/my_lib_component*
 	@echo "Clean completed."
-
