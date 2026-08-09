@@ -4,6 +4,7 @@ SHELL := /bin/bash
 # Configuration and Paths
 LAB_DIR := $(shell pwd)
 BIN_DIR := $(LAB_DIR)/bin
+export GOROOT := $(BIN_DIR)/go
 
 # my_lib_maths namespace paths
 MATHS_BINDINGS_DIR := $(LAB_DIR)/bindings/my_lib_maths
@@ -29,7 +30,9 @@ JS_V2_DIR := $(MY_LIB_BINDINGS_DIR)/js/v2
 WIT_BINDGEN := $(BIN_DIR)/wit-bindgen
 WASM_TOOLS := $(BIN_DIR)/wasm-tools
 TINYGO := $(BIN_DIR)/tinygo/bin/tinygo
-TINYGO_CMD := GOTOOLCHAIN=go1.24.0 $(TINYGO)
+TINYGO_CMD := PATH=$(BIN_DIR)/go/bin:$$PATH GOTOOLCHAIN=local $(TINYGO)
+GO := $(BIN_DIR)/go/bin/go
+GO_CMD := PATH=$(BIN_DIR)/go/bin:$$PATH GOTOOLCHAIN=local $(GO)
 ADAPTER_WASM := $(BIN_DIR)/wasi_snapshot_preview1.wasm
 NODE_BIN := $(BIN_DIR)/node/bin/node
 NPX_BIN := $(BIN_DIR)/node/bin/npx
@@ -40,13 +43,14 @@ WASM_TOOLS_VER := 1.200.0
 WASMTIME_VER := 18.0.2
 TINYGO_VER := 0.41.1
 NODE_VER := 22.12.0
+GO_VER := 1.24.0
 
 .PHONY: help setup build test run-py-v1 run-py-v2 run-node-v1 run-node-v2 clean
 
 help:
 	@echo "WASI Polyglot Bindings Lab Automation"
 	@echo "======================================"
-	@echo "make setup    - Download local precompiled WASM tools, tinygo & node into bin/"
+	@echo "make setup    - Download local precompiled WASM tools, tinygo, node & go into bin/"
 	@echo "make build    - Build all target packages (v1 binaries + v2 components)"
 	@echo "make run-py-v1   - Run the v1 JSON-RPC Python tests"
 	@echo "make run-py-v2   - Run the v2 Component Model Python tests"
@@ -63,12 +67,18 @@ test: run-py-v1 run-py-v2 run-node-v1 run-node-v2
 
 build-wasm-v0-tiny:
 	@echo "Compiling Go code to pure WASM (v0-tinygo) for browser target..."
-	@mkdir -p $(BUILD_V0_TINY_DIR)
-	@GOWORK=off $(TINYGO_CMD) build -scheduler=none -tags noscheduler -o $(BUILD_V0_TINY_DIR)/my_lib_maths.wasm -target=wasm $(MATHS_BINDINGS_DIR)/wasm/v0/tiny
-	@GOWORK=off $(TINYGO_CMD) build -scheduler=asyncify -o $(BUILD_V0_TINY_DIR)/my_lib_maths_asyncify.wasm -target=wasm $(MATHS_BINDINGS_DIR)/wasm/v0/tiny
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/none
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/asyncify
+	@GOWORK=off $(TINYGO_CMD) build -scheduler=none -tags noscheduler -o $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/none/my_lib_maths.wasm -target=wasm $(MATHS_BINDINGS_DIR)/wasm/v0/tiny/v0/export
+	@GOWORK=off $(TINYGO_CMD) build -scheduler=asyncify -o $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/asyncify/my_lib_maths.wasm -target=wasm $(MATHS_BINDINGS_DIR)/wasm/v0/tiny/v0/export
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/tasks
+	-@GOWORK=off $(TINYGO_CMD) build -scheduler=tasks -o $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/tasks/my_lib_maths.wasm -target=wasm $(MATHS_BINDINGS_DIR)/wasm/v0/tiny/v0/export 2> $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/tasks/build.log
 	@mkdir -p $(JS_V0_TINY_DIR)/my_lib_maths/_generated
-	@cd $(JS_V0_TINY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/tiny/my_lib_maths.wasm .
-	@cd $(JS_V0_TINY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/tiny/my_lib_maths_asyncify.wasm .
+	@cd $(JS_V0_TINY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/tiny/v0/export/none/my_lib_maths.wasm .
+	@cd $(JS_V0_TINY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/tiny/v0/export/asyncify/my_lib_maths.wasm .
+	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated
+	@rm -rf $(MATHS_BINDINGS_DIR)/js/all/_generated/build
+	@ln -sf ../../../build $(MATHS_BINDINGS_DIR)/js/all/_generated/build
 	@cd $(JS_V0_TINY_DIR)/my_lib_maths && ln -sf ../../../../pkg/js/maths.js maths_native.js
 	@mkdir -p docs/labs/v0
 	@rm -rf docs/labs/v0/tiny
@@ -76,15 +86,17 @@ build-wasm-v0-tiny:
 	@cp -L $(JS_V0_DIR)/index.html docs/labs/v0/
 	@mkdir -p docs/pkg
 	@cp -rL $(MATHS_BINDINGS_DIR)/pkg/* docs/pkg/
-	@echo "v0-tiny Compilation successful: none     - $(BUILD_V0_TINY_DIR)/my_lib_maths.wasm"
-	@echo "v0-tiny Compilation successful: asyncify - $(BUILD_V0_TINY_DIR)/my_lib_maths_asyncify.wasm"
+	@echo "v0-tiny Compilation successful: none     - $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/none/my_lib_maths.wasm"
+	@echo "v0-tiny Compilation successful: asyncify - $(MATHS_BINDINGS_DIR)/build/v0/tiny/v0/export/asyncify/my_lib_maths.wasm"
 
 build-wasm-v0-legacy:
 	@echo "Compiling Go code to pure WASM (v0-legacy) for browser target..."
-	@mkdir -p $(BUILD_V0_LEGACY_DIR)
-	@GOWORK=off GOOS=js GOARCH=wasm go build -o $(BUILD_V0_LEGACY_DIR)/my_lib_maths.wasm $(MATHS_BINDINGS_DIR)/wasm/v0/legacy
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0/stdgo/v0/jssyscall/native
+	@GOWORK=off GOOS=js GOARCH=wasm $(GO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0/stdgo/v0/jssyscall/native/my_lib_maths.wasm $(MATHS_BINDINGS_DIR)/wasm/v0/stdgo/v0/jssyscall
+	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated
+	@cp -f $$($(GO_CMD) env GOROOT)/lib/wasm/wasm_exec.js $(MATHS_BINDINGS_DIR)/js/all/_generated/wasm_exec.js
 	@mkdir -p $(JS_V0_LEGACY_DIR)/my_lib_maths/_generated
-	@cd $(JS_V0_LEGACY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/legacy/my_lib_maths.wasm .
+	@cd $(JS_V0_LEGACY_DIR)/my_lib_maths/_generated && ln -sf ../../../../../build/v0/stdgo/v0/jssyscall/native/my_lib_maths.wasm .
 	@cd $(JS_V0_LEGACY_DIR)/my_lib_maths && ln -sf ../../../../pkg/js/maths.js maths_native.js
 	@mkdir -p docs/labs/v0
 	@rm -rf docs/labs/v0/legacy
@@ -92,29 +104,31 @@ build-wasm-v0-legacy:
 	@cp -L $(JS_V0_DIR)/index.html docs/labs/v0/
 	@mkdir -p docs/pkg
 	@cp -rL $(MATHS_BINDINGS_DIR)/pkg/* docs/pkg/
-	@echo "v0-legacy Compilation successful: $(BUILD_V0_LEGACY_DIR)/my_lib_maths.wasm"
+	@echo "v0-legacy Compilation successful: $(MATHS_BINDINGS_DIR)/build/v0/stdgo/v0/jssyscall/native/my_lib_maths.wasm"
 
 build-wasm-v0: build-wasm-v0-tiny build-wasm-v0-legacy
 
 build-wasm-v0.1-tiny:
 	@echo "Compiling Maths Go code to WASI Preview 1 via TinyGo..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.1/tiny
-	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/my_lib_maths.wasm -scheduler=none -tags noscheduler -target=wasi $(MATHS_BINDINGS_DIR)/wasm/v0.1/tiny
-	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/my_lib_maths_asyncify.wasm -scheduler=asyncify -target=wasi $(MATHS_BINDINGS_DIR)/wasm/v0.1/tiny
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/export/none
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/export/asyncify
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/jsonrpc/asyncify
+	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/export/none/my_lib_maths.wasm -scheduler=none -tags noscheduler -target=wasi $(MATHS_BINDINGS_DIR)/wasm/v0.1/tiny/v0.1/export
+	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/export/asyncify/my_lib_maths.wasm -scheduler=asyncify -target=wasi $(MATHS_BINDINGS_DIR)/wasm/v0.1/tiny/v0.1/export
+	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/jsonrpc/asyncify/my_lib_maths.wasm -scheduler=asyncify -target=wasi $(MATHS_BINDINGS_DIR)/wasm/v0.1/stdgo/v0.1/jsonrpc
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/jsonrpc/tasks
+	-@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/jsonrpc/tasks/my_lib_maths.wasm -scheduler=tasks -target=wasi $(MATHS_BINDINGS_DIR)/wasm/v0.1/stdgo/v0.1/jsonrpc 2> $(MATHS_BINDINGS_DIR)/build/v0.1/tiny/v0.1/jsonrpc/tasks/build.log
 	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated && ln -sf ../../../build/v0.1/tiny/my_lib_maths.wasm my_lib_maths_v0.1_tiny.wasm
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated && ln -sf ../../../build/v0.1/tiny/my_lib_maths_asyncify.wasm my_lib_maths_v0.1_tiny_asyncify.wasm
 
 build-wasm-v0.1-legacy:
 	@echo "Compiling Maths Go code to WASI Preview 1 (direct exports)..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.1/legacy
-	@GOWORK=off GOOS=wasip1 GOARCH=wasm go build -o $(MATHS_BINDINGS_DIR)/build/v0.1/legacy/my_lib_maths.wasm $(MATHS_BINDINGS_DIR)/wasm/v0.1/legacy/direct
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.1/stdgo/v0.1/export/native
+	@GOWORK=off GOOS=wasip1 GOARCH=wasm $(GO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.1/stdgo/v0.1/export/native/my_lib_maths.wasm $(MATHS_BINDINGS_DIR)/wasm/v0.1/stdgo/v0.1/export
 	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated && ln -sf ../../../build/v0.1/legacy/my_lib_maths.wasm my_lib_maths_v0.1_legacy.wasm
 
 	@echo "Compiling Maths Go code to WASI Preview 1 (JSON-RPC subprocess)..."
-	@GOWORK=off GOOS=wasip1 GOARCH=wasm go build -o $(MATHS_BINDINGS_DIR)/build/v0.1/legacy/my_lib_maths_rpc.wasm $(MATHS_BINDINGS_DIR)/wasm/v0.1/legacy/rpc
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated && ln -sf ../../../build/v0.1/legacy/my_lib_maths_rpc.wasm my_lib_maths_v0.1_legacy_rpc.wasm
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.1/stdgo/v0.1/jsonrpc/native
+	@GOWORK=off GOOS=wasip1 GOARCH=wasm $(GO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.1/stdgo/v0.1/jsonrpc/native/my_lib_maths.wasm $(MATHS_BINDINGS_DIR)/wasm/v0.1/stdgo/v0.1/jsonrpc
 
 build-wasm-v0.1: build-wasm-v0.1-tiny build-wasm-v0.1-legacy
 
@@ -128,28 +142,27 @@ build-wasm-v0.2-none:
 		exit 1; \
 	fi
 	@echo "Step 1: Generating Go WIT interfaces for Maths (v0.2)..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/gen
-	@$(WIT_BINDGEN) tiny-go $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny --out-dir $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/gen
+	@mkdir -p $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/v0.1/export/gen
+	@$(WIT_BINDGEN) tiny-go $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny --out-dir $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/v0.1/export/gen
 	@echo "Step 2: Compiling Maths Go code via TinyGo (none)..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.2/none
-	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.2/none/my_lib_maths_raw.wasm -target=wasi -scheduler=none -tags noscheduler $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/none
+	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/none/my_lib_maths_raw.wasm -target=wasi -scheduler=none -tags noscheduler $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/v0.1/export
 	@echo "Step 3: Embedding WIT metadata (none)..."
-	@$(WASM_TOOLS) component embed $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny $(MATHS_BINDINGS_DIR)/build/v0.2/none/my_lib_maths_raw.wasm \
+	@$(WASM_TOOLS) component embed $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/none/my_lib_maths_raw.wasm \
 		--world wasi-maths-reference \
-		-o $(MATHS_BINDINGS_DIR)/build/v0.2/none/my_lib_maths_embedded.wasm
+		-o $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/none/my_lib_maths_embedded.wasm
 	@echo "Step 4: Translating to WASI Preview 2 Component (none)..."
-	@$(WASM_TOOLS) component new $(MATHS_BINDINGS_DIR)/build/v0.2/none/my_lib_maths_embedded.wasm \
+	@$(WASM_TOOLS) component new $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/none/my_lib_maths_embedded.wasm \
 		--adapt $(ADAPTER_WASM) \
-		-o $(MATHS_BINDINGS_DIR)/build/v0.2/none/my_lib_maths_component.wasm
-	@echo "v0.2 Component compiled successfully (none): $(MATHS_BINDINGS_DIR)/build/v0.2/none/my_lib_maths_component.wasm"
+		-o $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/none/my_lib_maths_component.wasm
+	@echo "v0.2 Component compiled successfully (none): $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/none/my_lib_maths_component.wasm"
 	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated
-	@rm -f $(MATHS_BINDINGS_DIR)/js/all/_generated/my_lib_maths_v0.2_tiny.wasm
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated && ln -sf ../../../build/v0.2/none/my_lib_maths_component.wasm my_lib_maths_v0.2_tiny.wasm
-	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y @bytecodealliance/jco transpile $(MATHS_BINDINGS_DIR)/build/v0.2/none/my_lib_maths_component.wasm --tla-compat -o $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/none
+	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y @bytecodealliance/jco transpile $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/none/my_lib_maths_component.wasm --tla-compat -o $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/tiny/v0.1/export/none
+	@PATH=$(BIN_DIR)/node/bin:$$PATH node -e "const fs = require('fs'); const file = '$(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/tiny/v0.1/export/none/my_lib_maths_component.js'; let content = fs.readFileSync(file, 'utf8'); content = content.replace('fetch(url).then(WebAssembly.compileStreaming)', 'fetch(url).then(res => res.arrayBuffer()).then(WebAssembly.compile)'); fs.writeFileSync(file, content);"
 	@echo "Step 6: Bundling WASI Preview 2 Component for browser (none)..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/none
-	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y esbuild $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/none/my_lib_maths_component.js --bundle --format=esm --platform=browser --external:node:* --minify --outfile=$(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/none/my_lib_maths_component.js
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/none && ln -sf ../../../jco/v0.2/none/*.wasm .
+	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/tiny/v0.1/export/none
+	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y esbuild $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/tiny/v0.1/export/none/my_lib_maths_component.js --bundle --format=esm --platform=browser --external:node:* --minify --outfile=$(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/tiny/v0.1/export/none/my_lib_maths_component.js
+	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/tiny/v0.1/export/none && ln -sf ../../../../../../jco/v0.2/tiny/v0.1/export/none/*.wasm .
 
 build-wasm-v0.2-asyncify:
 	@if [ ! -f $(WIT_BINDGEN) ] || [ ! -f $(WASM_TOOLS) ] || [ ! -f $(TINYGO) ]; then \
@@ -157,54 +170,52 @@ build-wasm-v0.2-asyncify:
 		exit 1; \
 	fi
 	@echo "Step 1: Generating Go WIT interfaces for Maths (v0.2)..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/gen
-	@$(WIT_BINDGEN) tiny-go $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny --out-dir $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/gen
+	@mkdir -p $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/v0.1/export/gen
+	@$(WIT_BINDGEN) tiny-go $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny --out-dir $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/v0.1/export/gen
 	@echo "Step 2: Compiling Maths Go code via TinyGo (asyncify)..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.2/asyncify
-	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.2/asyncify/my_lib_maths_raw.wasm -target=wasi -scheduler=asyncify $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/asyncify
+	@GOWORK=off $(TINYGO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_raw.wasm -target=wasi -scheduler=asyncify $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/v0.1/export
 	@echo "Step 3: Embedding WIT metadata (asyncify)..."
-	@$(WASM_TOOLS) component embed $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny $(MATHS_BINDINGS_DIR)/build/v0.2/asyncify/my_lib_maths_raw.wasm \
+	@$(WASM_TOOLS) component embed $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_raw.wasm \
 		--world wasi-maths-reference \
-		-o $(MATHS_BINDINGS_DIR)/build/v0.2/asyncify/my_lib_maths_embedded.wasm
+		-o $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_embedded.wasm
 	@echo "Step 4: Translating to WASI Preview 2 Component (asyncify)..."
-	@$(WASM_TOOLS) component new $(MATHS_BINDINGS_DIR)/build/v0.2/asyncify/my_lib_maths_embedded.wasm \
+	@$(WASM_TOOLS) component new $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_embedded.wasm \
 		--adapt $(ADAPTER_WASM) \
-		-o $(MATHS_BINDINGS_DIR)/build/v0.2/asyncify/my_lib_maths_component.wasm
-	@echo "v0.2 Component compiled successfully (asyncify): $(MATHS_BINDINGS_DIR)/build/v0.2/asyncify/my_lib_maths_component.wasm"
+		-o $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_component.wasm
+	@echo "v0.2 Component compiled successfully (asyncify): $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_component.wasm"
 	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated
-	@rm -f $(MATHS_BINDINGS_DIR)/js/all/_generated/my_lib_maths_v0.2_tiny_asyncify.wasm
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated && ln -sf ../../../build/v0.2/asyncify/my_lib_maths_component.wasm my_lib_maths_v0.2_tiny_asyncify.wasm
-	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y @bytecodealliance/jco transpile $(MATHS_BINDINGS_DIR)/build/v0.2/asyncify/my_lib_maths_component.wasm --tla-compat -o $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/asyncify
+	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y @bytecodealliance/jco transpile $(MATHS_BINDINGS_DIR)/build/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_component.wasm --tla-compat -o $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/tiny/v0.1/export/asyncify
+	@PATH=$(BIN_DIR)/node/bin:$$PATH node -e "const fs = require('fs'); const file = '$(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_component.js'; let content = fs.readFileSync(file, 'utf8'); content = content.replace('fetch(url).then(WebAssembly.compileStreaming)', 'fetch(url).then(res => res.arrayBuffer()).then(WebAssembly.compile)'); fs.writeFileSync(file, content);"
 	@echo "Step 6: Bundling WASI Preview 2 Component for browser (asyncify)..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/asyncify
-	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y esbuild $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/asyncify/my_lib_maths_component.js --bundle --format=esm --platform=browser --external:node:* --minify --outfile=$(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/asyncify/my_lib_maths_component.js
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/asyncify && ln -sf ../../../jco/v0.2/asyncify/*.wasm .
+	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/tiny/v0.1/export/asyncify
+	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y esbuild $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_component.js --bundle --format=esm --platform=browser --external:node:* --minify --outfile=$(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_component.js
+	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/tiny/v0.1/export/asyncify && ln -sf ../../../../../../jco/v0.2/tiny/v0.1/export/asyncify/*.wasm .
 
 build-wasm-v0.2-stdgo:
 	@echo "Compiling Maths Go code to WASI Preview 1 via Standard Go..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo
-	@GOWORK=off GOOS=wasip1 GOARCH=wasm go build -o $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/my_lib_maths_raw.wasm $(MATHS_BINDINGS_DIR)/wasm/v0.1/legacy/direct
+	@mkdir -p $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/v0.1/export/native
+	@GOWORK=off GOOS=wasip1 GOARCH=wasm $(GO_CMD) build -o $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/v0.1/export/native/my_lib_maths_raw.wasm $(MATHS_BINDINGS_DIR)/wasm/v0.2/stdgo/v0.1/export
 	@echo "Embedding WIT metadata (stdgo)..."
-	@$(WASM_TOOLS) component embed $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/my_lib_maths_raw.wasm \
-		--world wasi-maths-reference -o $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/my_lib_maths_embedded.wasm
+	@$(WASM_TOOLS) component embed $(MATHS_BINDINGS_DIR)/wit/v0.2/tiny $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/v0.1/export/native/my_lib_maths_raw.wasm \
+		--world wasi-maths-reference -o $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/v0.1/export/native/my_lib_maths_embedded.wasm
 	@echo "Translating to WASI Preview 2 Component (stdgo)..."
-	@$(WASM_TOOLS) component new $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/my_lib_maths_embedded.wasm \
+	@$(WASM_TOOLS) component new $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/v0.1/export/native/my_lib_maths_embedded.wasm \
 		--adapt $(ADAPTER_WASM) \
-		-o $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/my_lib_maths_component.wasm
-	@echo "v0.2 Standard Go Component compiled successfully: $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/my_lib_maths_component.wasm"
+		-o $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/v0.1/export/native/my_lib_maths_component.wasm
+	@echo "v0.2 Standard Go Component compiled successfully: $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/v0.1/export/native/my_lib_maths_component.wasm"
 	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated
-	@rm -f $(MATHS_BINDINGS_DIR)/js/all/_generated/my_lib_maths_v0.2_stdgo.wasm
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated && ln -sf ../../../build/v0.2/stdgo/my_lib_maths_component.wasm my_lib_maths_v0.2_stdgo.wasm
-	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y @bytecodealliance/jco transpile $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/my_lib_maths_component.wasm --tla-compat -o $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/stdgo
+	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y @bytecodealliance/jco transpile $(MATHS_BINDINGS_DIR)/build/v0.2/stdgo/v0.1/export/native/my_lib_maths_component.wasm --tla-compat -o $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/stdgo/v0.1/export/native
+	@PATH=$(BIN_DIR)/node/bin:$$PATH node -e "const fs = require('fs'); const file = '$(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/stdgo/v0.1/export/native/my_lib_maths_component.js'; let content = fs.readFileSync(file, 'utf8'); content = content.replace('args_get: exports0[\'18\'],', 'args_get: (argvPtr, argvBufPtr) => 0,'); content = content.replace('args_sizes_get: exports0[\'19\'],', 'args_sizes_get: (argcPtr, argvBufSizePtr) => { const view = new DataView(exports1.memory.buffer); view.setUint32(argcPtr, 0, true); view.setUint32(argvBufSizePtr, 0, true); return 0; },'); content = content.replace('environ_get: exports0[\'21\'],', 'environ_get: (environPtr, environBufPtr) => 0,'); content = content.replace('environ_sizes_get: exports0[\'22\'],', 'environ_sizes_get: (envCountPtr, envBufSizePtr) => { const view = new DataView(exports1.memory.buffer); view.setUint32(envCountPtr, 0, true); view.setUint32(envBufSizePtr, 0, true); return 0; },'); content = content.replace('exports1FibonacciRecursive = exports1[\'fibonacci-recursive\'];', 'exports1FibonacciRecursive = exports1[\'fibonacci-recursive\']; if (exports1._initialize) exports1._initialize(); else if (exports1._start) exports1._start();'); content = content.replace('fetch(url).then(WebAssembly.compileStreaming)', 'fetch(url).then(res => res.arrayBuffer()).then(WebAssembly.compile)'); fs.writeFileSync(file, content);"
 	@echo "Step 6: Bundling WASI Preview 2 Component for browser (stdgo)..."
-	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/stdgo
-	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y esbuild $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/stdgo/my_lib_maths_component.js --bundle --format=esm --platform=browser --external:node:* --minify --outfile=$(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/stdgo/my_lib_maths_component.js
-	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/stdgo && ln -sf ../../../jco/v0.2/stdgo/*.wasm .
+	@mkdir -p $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/stdgo/v0.1/export/native
+	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) -y esbuild $(MATHS_BINDINGS_DIR)/js/all/_generated/jco/v0.2/stdgo/v0.1/export/native/my_lib_maths_component.js --bundle --format=esm --platform=browser --external:node:* --minify --outfile=$(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/stdgo/v0.1/export/native/my_lib_maths_component.js
+	@cd $(MATHS_BINDINGS_DIR)/js/all/_generated/standalone/v0.2/stdgo/v0.1/export/native && ln -sf ../../../../../../jco/v0.2/stdgo/v0.1/export/native/*.wasm .
 
 build-wasm-v1:
 	@echo "Step 1: Compiling Go code to WASI Preview 1 for v1 package..."
 	@mkdir -p $(BUILD_DIR)/v1
-	@GOWORK=off GOOS=wasip1 GOARCH=wasm go build -o $(BUILD_DIR)/v1/my_lib.wasm $(WASM_DIR)/v1
+	@GOWORK=off GOOS=wasip1 GOARCH=wasm $(GO_CMD) build -o $(BUILD_DIR)/v1/my_lib.wasm $(WASM_DIR)/v1
 	@mkdir -p $(PY_V1_DIR)/my_lib/_generated
 	@cd $(PY_V1_DIR)/my_lib/_generated && ln -sf ../../../../build/v1/my_lib.wasm .
 	@mkdir -p $(NODE_V1_DIR)/my_lib/_generated
@@ -272,12 +283,12 @@ run-webpack-sample:
 	@PATH=$(BIN_DIR)/node/bin:$$PATH $(NPX_BIN) --prefix $(JS_V2_DIR)/samples/webpack webpack serve --config $(JS_V2_DIR)/samples/webpack/webpack.config.js --mode development
 
 copy-js-all:
-	@echo "Copying unified js/all to docs/labs/all..."
-	@mkdir -p docs/labs/all
-	@rm -rf docs/labs/all/*
-	@cp -rL $(MATHS_BINDINGS_DIR)/js/all/* docs/labs/all/
+	@echo "Copying unified js/all to docs/labs/my_lib_maths..."
+	@mkdir -p docs/labs/my_lib_maths
+	@rm -rf docs/labs/my_lib_maths/*
+	@cp -rL $(MATHS_BINDINGS_DIR)/js/all/* docs/labs/my_lib_maths/
 	@echo "Post-processing: Rewriting preview2-shim imports for browser Web Worker compatibility..."
-	@find docs/labs/all/_generated/jco/v0.2/ -name "*.js" -type f -exec sed -i "s|@bytecodealliance/preview2-shim/|https://esm.sh/@bytecodealliance/preview2-shim@0.19.0/|g" {} +
+	@find docs/labs/my_lib_maths/_generated/jco/v0.2/ -name "*.js" -type f -exec sed -i "s|@bytecodealliance/preview2-shim/|https://esm.sh/@bytecodealliance/preview2-shim@0.19.0/|g" {} +
 
 clean:
 	@rm -rf $(BIN_DIR)
@@ -287,4 +298,8 @@ clean:
 	@find $(LAB_DIR)/bindings -name "*.wasm" -delete
 	@rm -rf $(JS_V2_DIR)/my_lib/_generated/interfaces
 	@rm -f $(JS_V2_DIR)/my_lib/_generated/my_lib_component*
+	@rm -rf $(MATHS_BINDINGS_DIR)/js/all/_generated
+	@rm -rf $(MATHS_BINDINGS_DIR)/wasm/v0.2/tiny/v0.1/export/gen
+	@rm -rf docs/labs/my_lib_maths
+	@rm -f docs/labs/index.html
 	@echo "Clean completed."

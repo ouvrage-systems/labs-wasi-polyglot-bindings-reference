@@ -29,7 +29,7 @@ site_author = "gpineda-dev"
 # The site_url is the canonical URL for your site. When building online
 # documentation you should set this.
 # Read more: https://zensical.org/docs/setup/basics/#site_url
-#site_url = "https://www.example.com/"
+site_url = "https://ouvrage-systems.github.io/labs-wasi-polyglot-bindings-reference"
 
 # The copyright notice appears in the page footer and can contain an HTML
 # fragment.

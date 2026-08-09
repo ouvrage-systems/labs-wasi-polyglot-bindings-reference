@@ -85,25 +85,36 @@ graph TD
 
 ---
 
-## 5. Benchmark Configuration Nomenclature (Alias Codes)
+## 5. Benchmark Configuration Nomenclature (Structured Codes)
 
-To uniquely refer to any target runtime run configuration in raw data reports, console output logging, and meeting minutes, we establish a standardized **four-character alphanumeric code system (Nomenclature)**.
+To uniquely refer to any target runtime run configuration in raw data reports, console output logging, and meeting minutes, we establish a standardized **nomenclature system**.
 
-Every run configuration is represented by the pattern: `[V][L][F][M]`
+Every run configuration is represented by the pattern: `[Toolchain]-[L][F][M]`
 
-### A. Version & Guest Toolchain (V)
+### A. Toolchain Structured Code (4 characters: [Version][Compiler][Scheduler][Entrypoint])
 
-| V | Target Interface | Compiler / Runtime | Build Options / Details |
-| :---: | :--- | :--- | :--- |
-| **`A`** | v0 (Web) | TinyGo | `-scheduler=none` |
-| **`B`** | v0 (Web) | TinyGo | `-scheduler=asyncify` |
-| **`C`** | v0 (Web) | Standard Go | `syscall/js` API |
-| **`D`** | WASI v1 | TinyGo | CLI Target |
-| **`E`** | WASI v1 | Standard Go | CLI Target |
-| **`F`** | WASI v2 | TinyGo | Component Model (WIT Canonical ABI) |
-| **`G`** | WASI v2 | Standard Go | Component Model (WIT Canonical ABI) |
-| **`H`** | N/A (Host) | Pure Native | Host Engine (V8 / CPython) |
+| Position | Dimension | Character | Meaning / Configuration |
+| :---: | :--- | :---: | :--- |
+| **1** | **Version (Target / Interface)** | **`0`**<br>**`1`**<br>**`2`**<br>**`H`** | WASM v0 MVP (Browser / Node raw Wasm)<br>WASI v0.1 Preview 1<br>WASI v0.2 Component Model<br>Host Native |
+| **2** | **Compiler / Language** | **`T`**<br>**`S`**<br>**`J`**<br>**`P`** | TinyGo<br>Standard Go<br>JavaScript (Native Host JS)<br>Python (Native Host Python) |
+| **3** | **Scheduler** | **`0`**<br>**`A`**<br>**`T`**<br>**`N`** | none (no scheduler)<br>asyncify (cooperative binaryen)<br>tasks (cooperative native tasks)<br>native (host runtime native scheduler) |
+| **4** | **Entrypoint / API Protocol** | **`E`**<br>**`S`**<br>**`R`**<br>**`N`** | FFI Export (direct call)<br>JS Syscall (Go custom syscall mapping)<br>JSON-RPC (IPC subprocess)<br>Native Host API |
 
+#### Supported Toolchain Codes:
+* **`0T0E`** : WASM v0 MVP | TinyGo | none | FFI Export
+* **`0TAE`** : WASM v0 MVP | TinyGo | asyncify | FFI Export
+* **`0TTE`** : WASM v0 MVP | TinyGo | tasks | FFI Export (Expected to fail)
+* **`0SNS`** : WASM v0 MVP | Standard Go | native | JS Syscall
+* **`1T0E`** : WASI v0.1 | TinyGo | none | FFI Export
+* **`1TAE`** : WASI v0.1 | TinyGo | asyncify | FFI Export
+* **`1TTR`** : WASI v0.1 | TinyGo | tasks | JSON-RPC (Expected to fail)
+* **`1TAR`** : WASI v0.1 | TinyGo | asyncify | JSON-RPC
+* **`1SNR`** : WASI v0.1 | Standard Go | native | JSON-RPC
+* **`1SNE`** : WASI v0.1 | Standard Go | native | FFI Export
+* **`2T0E`** : WASI v0.2 Component | TinyGo | none | FFI Export
+* **`2TAE`** : WASI v0.2 Component | TinyGo | asyncify | FFI Export
+* **`2SNE`** : WASI v0.2 Component | Standard Go | native | FFI Export
+* **`HJNN`** : Host | Native JS | native | Native Host API
 
 ### B. Host Language / Runner (L)
 * **`1`** = JavaScript (Web Browser / Node.js V8)
@@ -127,9 +138,9 @@ Every run configuration is represented by the pattern: `[V][L][F][M]`
 ---
 
 ### Nomenclature Examples
-* **`A1B1`** : WASM v0 TinyGo (`A`), JavaScript Browser (`1`), running `ComputeSequence` (`B`), inside `WASM Internal` (`1`) execution.
-* **`C1D1`** : WASM v0 Legacy Standard Go (`C`), JavaScript Node.js (`1`), running `ConcurrentCountPrimes` (`D`), in `WASM Internal` (`1`) mode.
-* **`H2C2`** : Pure Host Python Control (`H`), Python (`2`), executing the sequential `FindLastPrime` algorithm (`C`), in `Pure Host JIT/Interpreter` (`2`) mode.
+* **`0T0E-1B1`** : WASM v0 TinyGo none FFI (`0T0E`), JavaScript Browser (`1`), running `ComputeSequence` (`B`), inside `WASM Internal` (`1`) execution.
+* **`0SNS-1D1`** : WASM v0 Legacy Standard Go JS Syscall (`0SNS`), JavaScript Node.js (`1`), running `ConcurrentCountPrimes` (`D`), in `WASM Internal` (`1`) mode.
+* **`HJNN-2C2`** : Pure Host Python Control (`HJNN`), Python (`2`), executing the sequential `FindLastPrime` algorithm (`C`), in `Pure Host JIT/Interpreter` (`2`) mode.
 
 ---
 

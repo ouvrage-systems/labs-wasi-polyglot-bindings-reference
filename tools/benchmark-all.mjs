@@ -36,7 +36,7 @@ async function runDriverBenchmark(toolchain, limit) {
 
   const m0 = measureMetricsStart();
   // Execute FindLastPrime (Function C, Mode 1 for WASM, Mode 2 for Native JS)
-  const mode = toolchain === 'H' ? '2' : '1';
+  const mode = toolchain === 'h.N.h.N.N.0' ? '2' : '1';
   const metrics = await runWorkload(driver, 'C', mode, { c: limit });
   const m0End = measureMetricsEnd(m0);
 
@@ -162,7 +162,22 @@ async function main() {
   console.log(`🚀 Running Unified Drivers Benchmark (FindLastPrime Limit = ${limit.toLocaleString()})...\n`);
 
   // Target toolchain letters aligned to the new A-H nomenclature
-  const targets = ['H', 'A', 'B', 'C', 'D', 'E', 'F', 'I', 'G', 'J'];
+  const targets = [
+    'h.N.h.N.N.0',
+    'w0.T.w0.O.E.0',
+    'w0.T.w0.A.E.0',
+    'w0.T.w0.T.E.0',
+    'w0.S.w0.N.S.0',
+    'p1.T.p1.O.E.0',
+    'p1.T.p1.A.E.0',
+    'p1.T.p1.T.R.0',
+    'p1.T.p1.A.R.0',
+    'p1.S.p1.N.R.0',
+    'p1.S.p1.N.E.0',
+    'p2.T.p1.O.E.0',
+    'p2.T.p1.A.E.0',
+    'p2.S.p1.N.E.0'
+  ];
   const results = [];
 
   for (const target of targets) {
@@ -183,7 +198,35 @@ async function main() {
     }
   }
 
-  console.table(results);
+  const footnotes = [];
+  const tableData = results.map(res => {
+    let displayResult = res.result;
+    if (displayResult && displayResult.length > 25) {
+      const fnNum = footnotes.length + 1;
+      footnotes.push({
+        num: fnNum,
+        target: res.id,
+        msg: displayResult
+      });
+      displayResult = `[${fnNum}] See footnotes`;
+    }
+    return {
+      ...res,
+      result: displayResult
+    };
+  });
+
+  console.table(tableData);
+
+  if (footnotes.length > 0) {
+    console.log("\n📝 Footnotes & Compiler Error Details:\n");
+    for (const fn of footnotes) {
+      console.log(`[${fn.num}] Target [${fn.target}] Compiler Failure:`);
+      console.log("--------------------------------------------------------------------------------");
+      console.log(fn.msg);
+      console.log("--------------------------------------------------------------------------------\n");
+    }
+  }
 }
 
 main();

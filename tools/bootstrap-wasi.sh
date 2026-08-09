@@ -8,6 +8,7 @@ WASM_TOOLS_VER="1.200.0"
 WASMTIME_VER="18.0.2"
 TINYGO_VER="0.41.1"
 NODE_VER="22.12.0"
+GO_VER="1.24.0"
 
 # Target installation flags
 INSTALL_WIT_BINDGEN=false
@@ -15,6 +16,8 @@ INSTALL_WASM_TOOLS=false
 INSTALL_ADAPTER=false
 INSTALL_TINYGO=false
 INSTALL_NODE=false
+INSTALL_GO=false
+INSTALL_WASMTIME=false
 ANY_SPECIFIC=false
 
 # Helper to check if next argument is a version string or a new flag
@@ -65,18 +68,32 @@ while [[ $# -gt 0 ]]; do
       NODE_VER=$(parse_version "${NODE_VER}" "${2:-}")
       if [[ $# -gt 1 && ! "$2" =~ ^- ]]; then shift 2; else shift; fi
       ;;
+    --go)
+      INSTALL_GO=true
+      ANY_SPECIFIC=true
+      GO_VER=$(parse_version "${GO_VER}" "${2:-}")
+      if [[ $# -gt 1 && ! "$2" =~ ^- ]]; then shift 2; else shift; fi
+      ;;
+    --wasmtime)
+      INSTALL_WASMTIME=true
+      ANY_SPECIFIC=true
+      WASMTIME_VER=$(parse_version "${WASMTIME_VER}" "${2:-}")
+      if [[ $# -gt 1 && ! "$2" =~ ^- ]]; then shift 2; else shift; fi
+      ;;
     --all)
       INSTALL_WIT_BINDGEN=true
       INSTALL_WASM_TOOLS=true
       INSTALL_ADAPTER=true
       INSTALL_TINYGO=true
       INSTALL_NODE=true
+      INSTALL_GO=true
+      INSTALL_WASMTIME=true
       ANY_SPECIFIC=true
       shift
       ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--dir <destination_directory>] [--wit-bindgen [version]] [--wasm-tools [version]] [--adapter [version]] [--tinygo [version]] [--node [version]] [--all]"
+      echo "Usage: $0 [--dir <destination_directory>] [--wit-bindgen [version]] [--wasm-tools [version]] [--adapter [version]] [--tinygo [version]] [--node [version]] [--go [version]] [--wasmtime [version]] [--all]"
       exit 1
       ;;
   esac
@@ -89,6 +106,8 @@ if [ "${ANY_SPECIFIC}" = false ]; then
   INSTALL_ADAPTER=true
   INSTALL_TINYGO=true
   INSTALL_NODE=true
+  INSTALL_GO=true
+  INSTALL_WASMTIME=true
 fi
 
 echo "Setting up requested WASI/WASM tools inside: ${DEST_DIR}..."
@@ -213,6 +232,34 @@ if [ "${INSTALL_NODE}" = true ]; then
   
   # Link active directory in root bin/ directory
   ln -sf "./packages/node/${NODE_VER}" "${DEST_DIR}/node"
+fi
+
+# 6. Download Go
+if [ "${INSTALL_GO}" = true ]; then
+  echo "Downloading Go v${GO_VER}..."
+  GO_EXTRACT_DIR="${PKG_DIR}/go/${GO_VER}"
+  rm -rf "${GO_EXTRACT_DIR}"
+  mkdir -p "${GO_EXTRACT_DIR}"
+  GO_TAR="go${GO_VER}.${OS_TINYGO}-${ARCH_TINYGO}.tar.gz"
+  curl -sSfL "https://go.dev/dl/${GO_TAR}" | tar -xz --strip-components=1 -C "${GO_EXTRACT_DIR}"
+  
+  # Link active directory in root bin/ directory
+  ln -sf "./packages/go/${GO_VER}" "${DEST_DIR}/go"
+fi
+
+# 7. Download Wasmtime CLI
+if [ "${INSTALL_WASMTIME}" = true ]; then
+  echo "Downloading Wasmtime CLI v${WASMTIME_VER}..."
+  WASMTIME_EXTRACT_DIR="${PKG_DIR}/wasmtime/${WASMTIME_VER}"
+  rm -rf "${WASMTIME_EXTRACT_DIR}"
+  mkdir -p "${WASMTIME_EXTRACT_DIR}"
+  WASMTIME_TAR="wasmtime-v${WASMTIME_VER}-${ARCH_WASM}-${OS_WASM}.tar.xz"
+  curl -sSfL "https://github.com/bytecodealliance/wasmtime/releases/download/v${WASMTIME_VER}/${WASMTIME_TAR}" \
+    | tar -xJ --strip-components=1 -C "${WASMTIME_EXTRACT_DIR}" "wasmtime-v${WASMTIME_VER}-${ARCH_WASM}-${OS_WASM}/wasmtime"
+  chmod +x "${WASMTIME_EXTRACT_DIR}/wasmtime"
+  
+  # Link active binary in root bin/ directory
+  ln -sf "./packages/wasmtime/${WASMTIME_VER}/wasmtime" "${DEST_DIR}/wasmtime"
 fi
 
 echo "WASI/WASM Toolchain Setup Complete inside: ${DEST_DIR}"

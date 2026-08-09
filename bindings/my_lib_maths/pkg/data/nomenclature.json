@@ -2,37 +2,326 @@
   "versions": {
     "0": "WASM v0 MVP",
     "0.1": "WASI v0.1 Preview 1",
-    "1": "WASI v1 Standard",
     "0.2": "WASI v0.2 Component",
     "host": "Host Native"
   },
-  "compilers": {
-    "tinygo": "TinyGo",
-    "go": "Standard Go",
-    "native": "JS V8 Engine"
+  "targets": {
+    "dimensions": {
+      "host_sandbox": {
+        "wasm": {
+          "code": "w0",
+          "label": "WASM Core MVP",
+          "description": "Raw WebAssembly runtime environment without system interface (WASI)."
+        },
+        "wasip1": {
+          "code": "p1",
+          "label": "WASI Preview 1",
+          "description": "POSIX-like system call sandbox (ex: Node.js WASI implementation)."
+        },
+        "wasip2": {
+          "code": "p2",
+          "label": "WASI Preview 2 Component Model",
+          "description": "WIT component execution environment (ex: jco transpiled ES modules)."
+        },
+        "host": {
+          "code": "h",
+          "label": "Host Native",
+          "description": "Direct execution on the host engine without any virtual machine."
+        }
+      },
+      "compiler": {
+        "tinygo": {
+          "code": "T",
+          "label": "TinyGo",
+          "description": "TinyGo compiler optimized for size and cooperative asyncify scheduling."
+        },
+        "stdgo": {
+          "code": "S",
+          "label": "Standard Go",
+          "description": "Official Go compiler with full runtime support (native garbage collector)."
+        },
+        "native": {
+          "code": "N",
+          "label": "Native / N/A",
+          "description": "No compiler used, executed natively as source-level host code."
+        }
+      },
+      "guest_target": {
+        "wasm": {
+          "code": "w0",
+          "label": "WASM Core MVP",
+          "description": "Compiled targeting raw WASM MVP without system API dependencies."
+        },
+        "wasip1": {
+          "code": "p1",
+          "label": "WASI Preview 1",
+          "description": "Compiled targeting wasip1 (GOOS=wasip1 or -target=wasi)."
+        },
+        "wasip2": {
+          "code": "p2",
+          "label": "WASI Preview 2 Component Model",
+          "description": "Compiled directly to WASI Preview 2 WIT components (-target=wasip2)."
+        },
+        "host": {
+          "code": "h",
+          "label": "Host Native",
+          "description": "No compiled target, executes natively in the host runner."
+        }
+      },
+      "scheduler": {
+        "none": {
+          "code": "O",
+          "label": "none",
+          "description": "Single-threaded sequential execution, no coroutine scheduler compiled."
+        },
+        "asyncify": {
+          "code": "A",
+          "label": "asyncify",
+          "description": "Cooperative stack-switching using Binaryen Asyncify post-processing."
+        },
+        "tasks": {
+          "code": "T",
+          "label": "tasks",
+          "description": "TinyGo experimental internal scheduler (goroutines mapped to fibers)."
+        },
+        "native": {
+          "code": "N",
+          "label": "native",
+          "description": "Uses the native scheduler of the host runtime or the standard Go compiler."
+        }
+      },
+      "entrypoint": {
+        "export": {
+          "code": "E",
+          "label": "export",
+          "description": "Direct memory calls via exported WebAssembly functions."
+        },
+        "jssyscall": {
+          "code": "S",
+          "label": "jssyscall",
+          "description": "Proprietary Go runtime syscall mapping targeting the JavaScript host environment."
+        },
+        "jsonrpc": {
+          "code": "R",
+          "label": "jsonrpc",
+          "description": "Asynchronous inter-process communication using JSON-RPC over stdout/stdin."
+        },
+        "native": {
+          "code": "N",
+          "label": "native",
+          "description": "Direct native execution entrypoint on the host language runner."
+        }
+      },
+      "variant": {
+        "default": {
+          "code": "0",
+          "label": "Default",
+          "description": "Standard compilation flags and runtime configuration."
+        }
+      }
+    },
+    "matrix": [
+      {
+        "dimensions": {
+          "host_sandbox": "wasm",
+          "compiler": "tinygo",
+          "guest_target": "wasm",
+          "scheduler": "none",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0/tiny/v0/export/none/my_lib_maths.wasm"
+        },
+        "loader": "v0-tiny"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasm",
+          "compiler": "tinygo",
+          "guest_target": "wasm",
+          "scheduler": "asyncify",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0/tiny/v0/export/asyncify/my_lib_maths.wasm"
+        },
+        "loader": "v0-tiny"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasm",
+          "compiler": "tinygo",
+          "guest_target": "wasm",
+          "scheduler": "tasks",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0/tiny/v0/export/tasks/my_lib_maths.wasm"
+        },
+        "loader": "v0-tiny"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasm",
+          "compiler": "stdgo",
+          "guest_target": "wasm",
+          "scheduler": "native",
+          "entrypoint": "jssyscall",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0/stdgo/v0/jssyscall/native/my_lib_maths.wasm"
+        },
+        "loader": "v0-legacy"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip1",
+          "compiler": "tinygo",
+          "guest_target": "wasip1",
+          "scheduler": "none",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.1/tiny/v0.1/export/none/my_lib_maths.wasm"
+        },
+        "loader": "v0.1-wasi"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip1",
+          "compiler": "tinygo",
+          "guest_target": "wasip1",
+          "scheduler": "asyncify",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.1/tiny/v0.1/export/asyncify/my_lib_maths.wasm"
+        },
+        "loader": "v0.1-wasi"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip1",
+          "compiler": "tinygo",
+          "guest_target": "wasip1",
+          "scheduler": "tasks",
+          "entrypoint": "jsonrpc",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.1/tiny/v0.1/jsonrpc/tasks/my_lib_maths.wasm"
+        },
+        "loader": "v0.1-legacy"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip1",
+          "compiler": "tinygo",
+          "guest_target": "wasip1",
+          "scheduler": "asyncify",
+          "entrypoint": "jsonrpc",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.1/tiny/v0.1/jsonrpc/asyncify/my_lib_maths.wasm"
+        },
+        "loader": "v0.1-legacy"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip1",
+          "compiler": "stdgo",
+          "guest_target": "wasip1",
+          "scheduler": "native",
+          "entrypoint": "jsonrpc",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.1/stdgo/v0.1/jsonrpc/native/my_lib_maths.wasm"
+        },
+        "loader": "v0.1-legacy"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip1",
+          "compiler": "stdgo",
+          "guest_target": "wasip1",
+          "scheduler": "native",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.1/stdgo/v0.1/export/native/my_lib_maths.wasm"
+        },
+        "loader": "v0.1-wasi"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip2",
+          "compiler": "tinygo",
+          "guest_target": "wasip1",
+          "scheduler": "none",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.2/tiny/v0.1/export/none/my_lib_maths_component.wasm",
+          "component_entrypoint_js": "standalone/v0.2/tiny/v0.1/export/none/my_lib_maths_component.js"
+        },
+        "loader": "v0.2-tiny"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip2",
+          "compiler": "tinygo",
+          "guest_target": "wasip1",
+          "scheduler": "asyncify",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_component.wasm",
+          "component_entrypoint_js": "standalone/v0.2/tiny/v0.1/export/asyncify/my_lib_maths_component.js"
+        },
+        "loader": "v0.2-tiny"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "wasip2",
+          "compiler": "stdgo",
+          "guest_target": "wasip1",
+          "scheduler": "native",
+          "entrypoint": "export",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "build/v0.2/stdgo/v0.1/export/native/my_lib_maths_component.wasm",
+          "component_entrypoint_js": "standalone/v0.2/stdgo/v0.1/export/native/my_lib_maths_component.js"
+        },
+        "loader": "v0.2-stdgo"
+      },
+      {
+        "dimensions": {
+          "host_sandbox": "host",
+          "compiler": "native",
+          "guest_target": "host",
+          "scheduler": "native",
+          "entrypoint": "native",
+          "variant": "default"
+        },
+        "paths": {
+          "wasm": "maths_native.js"
+        },
+        "loader": "native"
+      }
+    ]
   },
-  "schedulers": {
-    "none": "none",
-    "asyncify": "asyncify",
-    "tasks": "tasks",
-    "native": "native",
-    "rpc": "RPC Subprocess",
-    "direct": "Direct Exports",
-    "stdgo": "Standard Go"
-  },
-  "targets": [
-    { "code": "A", "version": "0", "compiler": "tinygo", "scheduler": "none", "binary": "my_lib_maths_v0_tiny.wasm", "loader": "v0-tiny" },
-    { "code": "B", "version": "0", "compiler": "tinygo", "scheduler": "asyncify", "binary": "my_lib_maths_v0_tiny_asyncify.wasm", "loader": "v0-tiny" },
-    { "code": "C", "version": "0", "compiler": "go", "scheduler": "native", "binary": "my_lib_maths_v0_legacy.wasm", "loader": "v0-legacy" },
-    { "code": "D", "version": "0.1", "compiler": "tinygo", "scheduler": "none", "binary": "my_lib_maths_v0.1_tiny.wasm", "loader": "v0.1-wasi" },
-    { "code": "E", "version": "0.1", "compiler": "tinygo", "scheduler": "asyncify", "binary": "my_lib_maths_v0.1_tiny_asyncify.wasm", "loader": "v0.1-wasi" },
-    { "code": "F", "version": "0.1", "compiler": "go", "scheduler": "rpc", "binary": "my_lib_maths_v0.1_legacy_rpc.wasm", "loader": "v0.1-legacy" },
-    { "code": "I", "version": "0.1", "compiler": "go", "scheduler": "direct", "binary": "my_lib_maths_v0.1_legacy.wasm", "loader": "v0.1-wasi" },
-    { "code": "G", "version": "0.2", "compiler": "tinygo", "scheduler": "none", "binary": "my_lib_maths_v0.2_tiny.wasm", "loader": "v0.2-tiny" },
-    { "code": "J", "version": "0.2", "compiler": "tinygo", "scheduler": "asyncify", "binary": "my_lib_maths_v0.2_tiny_asyncify.wasm", "loader": "v0.2-tiny" },
-    { "code": "K", "version": "0.2", "compiler": "go", "scheduler": "stdgo", "binary": "my_lib_maths_v0.2_stdgo.wasm", "loader": "v0.2-stdgo" },
-    { "code": "H", "version": "host", "compiler": "native", "scheduler": "native", "binary": "maths_native.js", "loader": "native" }
-  ],
   "languages": {
     "1": "JavaScript (Browser / Node.js)",
     "2": "Python"
@@ -50,11 +339,11 @@
         "C": { "label": "Unused", "disable": true, "default": 0 }
       },
       "methods": {
-        "1": { "target": "driver", "name": "add" },
-        "2": { "target": "native", "name": "jsAdd" },
-        "4": { "target": "driver", "name": "addCold" }
+        "1": { "target": "wasm", "name": "add" },
+        "2": { "target": "native", "name": "nativeAdd" },
+        "4": { "target": "wasm", "name": "addCold" }
       },
-      "verify": "jsAdd",
+      "verify": "nativeAdd",
       "math": {
         "expression": "A + B",
         "mapping": "A = Operand A, B = Operand B",
@@ -73,12 +362,12 @@
         "C": { "label": "Iterations C", "disable": false, "default": 10000 }
       },
       "methods": {
-        "1": { "target": "driver", "name": "computeSequence" },
-        "2": { "target": "native", "name": "jsComputeSequence" },
-        "3": { "target": "jswasm", "name": "jswasmComputeSequence" },
-        "4": { "target": "jswasm", "name": "jswasmComputeSequence" }
+        "1": { "target": "wasm", "name": "computeSequence" },
+        "2": { "target": "native", "name": "nativeComputeSequence" },
+        "3": { "target": "xwasm", "name": "xwasmComputeSequence" },
+        "4": { "target": "xwasm", "name": "xwasmComputeSequence" }
       },
-      "verify": "jsComputeSequence",
+      "verify": "nativeComputeSequence",
       "math": {
         "expression": "Uₙ = Uₙ₋₁ + B, where U₀ = A, for n ∈ [1..C]",
         "mapping": "A = U₀ (initial term), B = d (difference), C = N (iterations)",
@@ -97,12 +386,12 @@
         "C": { "label": "Search Limit C", "disable": false, "default": 10000 }
       },
       "methods": {
-        "1": { "target": "driver", "name": "findLastPrime" },
-        "2": { "target": "native", "name": "jsFindLastPrime" },
-        "3": { "target": "jswasm", "name": "jswasmFindLastPrime" },
-        "4": { "target": "jswasm", "name": "jswasmFindLastPrime" }
+        "1": { "target": "wasm", "name": "findLastPrime" },
+        "2": { "target": "native", "name": "nativeFindLastPrime" },
+        "3": { "target": "xwasm", "name": "xwasmFindLastPrime" },
+        "4": { "target": "xwasm", "name": "xwasmFindLastPrime" }
       },
-      "verify": "jsFindLastPrime",
+      "verify": "nativeFindLastPrime",
       "math": {
         "expression": "max(p) where p ≤ C is prime",
         "mapping": "C = limit",
@@ -121,12 +410,12 @@
         "C": { "label": "Search Limit C", "disable": false, "default": 10000 }
       },
       "methods": {
-        "1": { "target": "driver", "name": "concurrentCountPrimes" },
-        "2": { "target": "native", "name": "jsConcurrentCountPrimes" },
-        "3": { "target": "jswasm", "name": "jswasmConcurrentCountPrimes" },
-        "4": { "target": "jswasm", "name": "jswasmConcurrentCountPrimes" }
+        "1": { "target": "wasm", "name": "concurrentCountPrimes" },
+        "2": { "target": "native", "name": "nativeConcurrentCountPrimes" },
+        "3": { "target": "xwasm", "name": "xwasmConcurrentCountPrimes" },
+        "4": { "target": "xwasm", "name": "xwasmConcurrentCountPrimes" }
       },
-      "verify": "jsConcurrentCountPrimes",
+      "verify": "nativeConcurrentCountPrimes",
       "math": {
         "expression": "count(p) where p ∈ [2..C] is prime",
         "mapping": "A = workers (concurrency level), C = limit",
@@ -145,12 +434,12 @@
         "C": { "label": "Term N", "disable": false, "default": 40 }
       },
       "methods": {
-        "1": { "target": "driver", "name": "fibonacci" },
-        "2": { "target": "native", "name": "jsFibonacciIterative" },
-        "3": { "target": "jswasm", "name": "jswasmFibonacci" },
-        "4": { "target": "jswasm", "name": "jswasmFibonacci" }
+        "1": { "target": "wasm", "name": "fibonacci" },
+        "2": { "target": "native", "name": "nativeFibonacciIterative" },
+        "3": { "target": "xwasm", "name": "xwasmFibonacci" },
+        "4": { "target": "xwasm", "name": "xwasmFibonacci" }
       },
-      "verify": "jsFibonacciIterative",
+      "verify": "nativeFibonacciIterative",
       "math": {
         "expression": "F(C) where F(n) = F(n-1) + F(n-2), F(0)=0, F(1)=1",
         "mapping": "C = N (term number)",
@@ -169,12 +458,12 @@
         "C": { "label": "Recursive Term N", "disable": false, "default": 25 }
       },
       "methods": {
-        "1": { "target": "driver", "name": "fibonacciRecursive" },
-        "2": { "target": "native", "name": "jsFibonacciRecursive" },
-        "3": { "target": "jswasm", "name": "jswasmFibonacciRecursive" },
-        "4": { "target": "jswasm", "name": "jswasmFibonacciRecursive" }
+        "1": { "target": "wasm", "name": "fibonacciRecursive" },
+        "2": { "target": "native", "name": "nativeFibonacciRecursive" },
+        "3": { "target": "xwasm", "name": "xwasmFibonacciRecursive" },
+        "4": { "target": "xwasm", "name": "xwasmFibonacciRecursive" }
       },
-      "verify": "jsFibonacciRecursive",
+      "verify": "nativeFibonacciRecursive",
       "math": {
         "expression": "F(C) where F(n) = F(n-1) + F(n-2), F(0)=0, F(1)=1",
         "mapping": "C = N (term number)",

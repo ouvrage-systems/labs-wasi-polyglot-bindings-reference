@@ -1,0 +1,6 @@
+# internal/task
+/home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/packages/tinygo/0.41.1/src/internal/task/task_stack.go:56:9: undefined: calleeSavedRegs
+/home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/packages/tinygo/0.41.1/src/internal/task/task_stack.go:56:68: undefined: calleeSavedRegs
+/home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/packages/tinygo/0.41.1/src/internal/task/task_stack.go:59:4: s.archInit undefined (type *state has no field or method archInit)
+/home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/packages/tinygo/0.41.1/src/internal/task/task_stack_unicore.go:26:20: currentTask.state.pause undefined (type state has no field or method pause)
+/home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bin/packages/tinygo/0.41.1/src/internal/task/task_stack_unicore.go:34:10: t.state.resume undefined (type state has no field or method resume)

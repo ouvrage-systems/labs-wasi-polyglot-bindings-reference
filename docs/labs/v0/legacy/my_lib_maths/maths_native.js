@@ -1,11 +1,11 @@
 // Pure JavaScript implementations of Ouvrage Math workloads.
 // Shared across Node.js CLI benchmarks and Web Browser Studio HTML pages.
 
-export function jsAdd(a, b) {
+export function nativeAdd(a, b) {
   return BigInt(a) + BigInt(b);
 }
 
-export function jsComputeSequence(u0, b, n) {
+export function nativeComputeSequence(u0, b, n) {
   let curr = BigInt(u0);
   const step = BigInt(b);
   const count = BigInt(n);
@@ -15,7 +15,7 @@ export function jsComputeSequence(u0, b, n) {
   return curr;
 }
 
-export function jsIsPrime(n) {
+export function nativeIsPrime(n) {
   const val = BigInt(n);
   if (val <= 1n) return false;
   if (val <= 3n) return true;
@@ -26,16 +26,16 @@ export function jsIsPrime(n) {
   return true;
 }
 
-export function jsCountPrimes(limit) {
+export function nativeCountPrimes(limit) {
   let count = 0n;
   const max = BigInt(limit);
   for (let i = 2n; i <= max; i++) {
-    if (jsIsPrime(i)) count++;
+    if (nativeIsPrime(i)) count++;
   }
   return count;
 }
 
-export async function jsConcurrentCountPrimes(limit, workers = 4, onProgress = null) {
+export async function nativeConcurrentCountPrimes(limit, workers = 4, onProgress = null) {
   const max = BigInt(limit);
   const numWorkers = Math.max(1, workers);
   const chunkSize = (max - 1n) / BigInt(numWorkers);
@@ -47,7 +47,7 @@ export async function jsConcurrentCountPrimes(limit, workers = 4, onProgress = n
     tasks.push((async () => {
       let count = 0n;
       for (let i = start; i <= end; i++) {
-        if (jsIsPrime(i)) count++;
+        if (nativeIsPrime(i)) count++;
       }
       return count;
     })());
@@ -59,16 +59,16 @@ export async function jsConcurrentCountPrimes(limit, workers = 4, onProgress = n
   return total;
 }
 
-export function jsFindLastPrime(limit) {
+export function nativeFindLastPrime(limit) {
   let last = 0n;
   const max = BigInt(limit);
   for (let i = 2n; i <= max; i++) {
-    if (jsIsPrime(i)) last = i;
+    if (nativeIsPrime(i)) last = i;
   }
   return last;
 }
 
-export function jsFibonacciIterative(n) {
+export function nativeFibonacciIterative(n) {
   const term = BigInt(n);
   if (term <= 0n) return 0n;
   if (term === 1n) return 1n;
@@ -81,9 +81,9 @@ export function jsFibonacciIterative(n) {
   return b;
 }
 
-export function jsFibonacciRecursive(n) {
+export function nativeFibonacciRecursive(n) {
   const term = BigInt(n);
   if (term <= 0n) return 0n;
   if (term === 1n) return 1n;
-  return jsFibonacciRecursive(term - 1n) + jsFibonacciRecursive(term - 2n);
+  return nativeFibonacciRecursive(term - 1n) + nativeFibonacciRecursive(term - 2n);
 }

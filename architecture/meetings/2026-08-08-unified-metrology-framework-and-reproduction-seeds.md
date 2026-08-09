@@ -73,6 +73,13 @@ Runtimes are modeled as clean sandboxes conforming to the `BaseDriver` interface
 *   **WasmDriver (Mode 1)**: Injects the version-specific loader (`V0TinyLoader`, `V0LegacyLoader`, `V01WasiLoader`) to load, compile, and execute the compiled `.wasm` guest binary directly for single-call primitives.
 *   **Hybrid Engine (Mode 3 & 4 - `jswasm`)**: Rather than executing a driver directly, the orchestrator (`lab_matrix.js`) imports the hybrid workloads from `maths_jswasm.js`. The outer control loop is driven in host JS, but it delegates its low-level math calculations to a nested **`WasmDriver` sub-driver** passed as an argument.
 
+### 2.3 Web Worker Offloading Architecture (`worker.js`)
+To prevent the browser UI thread from freezing during CPU-intensive benchmarks (which triggers the browser's "This page is not responding..." warning), we migrated all benchmark execution to a separate background thread using a **Web Worker** ([`worker.js`](file:///home/gpineda/Documents/ouvrage/labs/wasi-polyglot-bindings-reference/bindings/my_lib_maths/js/all/worker.js)).
+*   **Non-Blocking UI Thread**: The browser main thread (`index.html`) is dedicated solely to handling user events, drawing SVG/Canvas charts, managing the history log, and updating URL hash seeds.
+*   **Message-Driven Delegation**: When a benchmark run is initiated, the main thread serializes the run configuration and spawns/notifies the worker via `postMessage`.
+*   **Encapsulated Worker Scope**: The worker imports the environment-agnostic `lab_matrix.js` orchestrator using ES modules. It runs the benchmark loops sequentially, performs the FFI calls, measures real-time performance indices, asserts JIT correctness validation, and passes the parsed result payload back to the host UI.
+*   **Standalone Dependencies Requirement**: Since Web Workers do not inherit parent-page imports or support browser `importmaps` in some environments, resolving dependencies inside the worker was a key driver in our decision to bundle WASI v0.2 components into standalone ES modules (inlined shims) using `esbuild`.
+
 ---
 
 ## 3. Data-Driven Pipelines & Verification Contracts
@@ -171,4 +178,4 @@ The architectural abstractions validated in this refactoring represent the archi
     This preserves 100% of the UI layout, history log storage, CSV/JSON metrology exports, dynamic formulas, JIT assertions, and command line seed capabilities out of the box.
 
 ---
-*Design document recorded by `@Antigravity` in partnership with `@gpineda` (CPGE MPSI/MP, INSA CVL Promo 2020).*
+*Design document recorded by `@Antigravity` in partnership with `@gpineda`*
