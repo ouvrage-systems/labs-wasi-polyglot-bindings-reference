@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
-import { add, isPrime, countPrimes, findLastPrime, fibonacciRecursive, getWasmByteSize } from '../bindings/my_lib_maths/js/v0/tiny/my_lib_maths/index.js';
+import { getMathsImplementation } from '../bindings/my_lib_maths/js/v0/tiny/my_lib_maths/maths_router.js';
+
+const api = await getMathsImplementation('A');
+const { add, isPrime, countPrimes, findLastPrime, fibonacciRecursive, getWasmByteSize } = api;
+
 import fs from 'node:fs';
 import path from 'node:path';
 

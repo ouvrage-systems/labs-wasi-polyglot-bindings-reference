@@ -34,11 +34,14 @@ func IsPrime(n int64) bool {
 	return true
 }
 
-// CountPrimes counts prime numbers up to limit.
+// CountPrimes counts prime numbers up to limit starting from start.
 // Demonstrates CPU-intensive raw WASM execution speed.
-func CountPrimes(limit int64) int64 {
+func CountPrimes(limit int64, start int64) int64 {
+	if start < 2 {
+		start = 2
+	}
 	count := int64(0)
-	for i := int64(2); i <= limit; i++ {
+	for i := start; i <= limit; i++ {
 		if IsPrime(i) {
 			count++
 		}
@@ -52,7 +55,7 @@ func ConcurrentCountPrimes(limit int64, numWorkers int) int64 {
 		return 0
 	}
 	if numWorkers <= 1 {
-		return CountPrimes(limit)
+		return CountPrimes(limit, 2)
 	}
 
 	results := make(chan int64, numWorkers)

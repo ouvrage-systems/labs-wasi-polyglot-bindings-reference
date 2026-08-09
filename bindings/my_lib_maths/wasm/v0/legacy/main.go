@@ -26,7 +26,11 @@ func isPrime(this js.Value, args []js.Value) any {
 
 func countPrimes(this js.Value, args []js.Value) any {
 	limit := int64(args[0].Int())
-	return maths.CountPrimes(limit)
+	start := int64(2)
+	if len(args) > 1 {
+		start = int64(args[1].Int())
+	}
+	return maths.CountPrimes(limit, start)
 }
 
 func concurrentCountPrimes(this js.Value, args []js.Value) any {

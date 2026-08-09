@@ -1,5 +1,5 @@
 mode,limitTested,totalTimeMs,cpuUserMs,cpuSystemMs,heapDeltaMb,rssMb,result
-"WASM Internal (FindLastPrime)",500000,53.507,62.482,4.928,0.035,61.26,"499979"
-"Pure JS V8 JIT (FindLastPrime)",500000,1304.646,1449.084,4.416,0.229,64.48,"499979"
-"Iterative JS-to-WASM FFI (Cached)",50000,29.963,50.616,0.254,0.404,65.5,"49999"
-"WASM Fibonacci Recursive (N=35)",35,92.234,102.411,0.092,0.002,65.5,"9227465"
+"WASM Internal (FindLastPrime)",10000,7.434,0.15,12.867,0.15,59.8,"9973"
+"Pure JS V8 JIT (FindLastPrime)",10000,9.993,12.99,1.362,1.506,63.16,"9973"
+"Iterative JS-to-WASM FFI (Cached)",10000,12.442,25.794,0.003,-0.475,66.05,"9973"
+"WASM Fibonacci Recursive (N=35)",35,78.162,80.09,0.748,0.002,66.05,"9227465"

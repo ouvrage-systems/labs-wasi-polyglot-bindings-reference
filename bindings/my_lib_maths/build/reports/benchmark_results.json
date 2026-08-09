@@ -1,50 +1,50 @@
 {
   "metadata": {
-    "timestamp": "2026-08-05T01:47:56.649Z",
+    "timestamp": "2026-08-08T15:26:36.647Z",
     "engine": "Node.js v18.19.1",
     "target": "WASM v0 TinyGo (64-bit int64)",
-    "wasmByteSize": 121348,
-    "limitRequested": 500000
+    "wasmByteSize": 101185,
+    "limitRequested": 10000
   },
   "results": [
     {
       "mode": "WASM Internal (FindLastPrime)",
-      "limitTested": 500000,
-      "totalTimeMs": 53.507,
-      "cpuUserMs": 62.482,
-      "cpuSystemMs": 4.928,
-      "heapDeltaMb": 0.035,
-      "rssMb": 61.26,
-      "result": "499979"
+      "limitTested": 10000,
+      "totalTimeMs": 7.434,
+      "cpuUserMs": 0.15,
+      "cpuSystemMs": 12.867,
+      "heapDeltaMb": 0.15,
+      "rssMb": 59.8,
+      "result": "9973"
     },
     {
       "mode": "Pure JS V8 JIT (FindLastPrime)",
-      "limitTested": 500000,
-      "totalTimeMs": 1304.646,
-      "cpuUserMs": 1449.084,
-      "cpuSystemMs": 4.416,
-      "heapDeltaMb": 0.229,
-      "rssMb": 64.48,
-      "result": "499979"
+      "limitTested": 10000,
+      "totalTimeMs": 9.993,
+      "cpuUserMs": 12.99,
+      "cpuSystemMs": 1.362,
+      "heapDeltaMb": 1.506,
+      "rssMb": 63.16,
+      "result": "9973"
     },
     {
       "mode": "Iterative JS-to-WASM FFI (Cached)",
-      "limitTested": 50000,
-      "totalTimeMs": 29.963,
-      "cpuUserMs": 50.616,
-      "cpuSystemMs": 0.254,
-      "heapDeltaMb": 0.404,
-      "rssMb": 65.5,
-      "result": "49999"
+      "limitTested": 10000,
+      "totalTimeMs": 12.442,
+      "cpuUserMs": 25.794,
+      "cpuSystemMs": 0.003,
+      "heapDeltaMb": -0.475,
+      "rssMb": 66.05,
+      "result": "9973"
     },
     {
       "mode": "WASM Fibonacci Recursive (N=35)",
       "limitTested": 35,
-      "totalTimeMs": 92.234,
-      "cpuUserMs": 102.411,
-      "cpuSystemMs": 0.092,
+      "totalTimeMs": 78.162,
+      "cpuUserMs": 80.09,
+      "cpuSystemMs": 0.748,
       "heapDeltaMb": 0.002,
-      "rssMb": 65.5,
+      "rssMb": 66.05,
       "result": "9227465"
     }
   ]

@@ -15,14 +15,14 @@ This document defines the core benchmarking environment, the toolchain matrix, t
 
 We selected six functions from our Go codebase to capture different aspects of CPU workloads, stack limits, and compiler passes. The table below outlines their mathematical models and system focus tags. Click on a function's reference to view its detailed mathematical equations, system targets, and multi-language implementation code in [Section 6](#6-workload-implementation-code-reference).
 
-| Go Function | Mathematical Model | System Focus (Tags) | Detailed Code & Math Reference |
+| Go Function | Mathematical Model | System Focus (Tags) | Details |
 | :--- | :--- | :--- | :--- |
-| **`Add`** | $f(a, b) = a + b$ | `#ffi-overhead` `#latency` | [See Section 6](#add-fa) |
-| **`ComputeSequence`** | $U_n = U_0 + n \times b$ | `#loop-induction` `#compiler-scev` | [See Section 6](#computesequence-fb) |
-| **`FindLastPrime`** | $P_{max} \le limit$ | `#cpu-bound` `#trial-division` | [See Section 6](#findlastprime-fc) |
-| **`ConcurrentCountPrimes`** | $\sum P_i$ partitioned | `#multithreading` `#scheduler` | [See Section 6](#concurrentcountprimes-fd) |
-| **`Fibonacci`** | $F_n$ ($O(N)$ linear) | `#register-loop` `#fast-arithmetic` | [See Section 6](#fibonacci-fe) |
-| **`FibonacciRecursive`** | $F_n$ ($O(2^N)$ recursive) | `#stack-depth` `#recursion-cost` | [See Section 6](#fibonaccirecursive-ff) |
+| **`Add`** | $f(a, b) = a + b$ | `#ffi-overhead` `#latency` | [🔍](#add-fa) |
+| **`ComputeSequence`** | $\begin{cases} U_{n+1} &= U_n + b \\ U_0 &= a \end{cases}$ | `#loop-induction` `#compiler-scev` | [🔍](#computesequence-fb) |
+| **`FindLastPrime`** | $P_{max} \le limit$ | `#cpu-bound` `#trial-division` | [🔍](#findlastprime-fc) |
+| **`ConcurrentCountPrimes`** | $\sum P_i$ partitioned | `#multithreading` `#scheduler` | [🔍](#concurrentcountprimes-fd) |
+| **`Fibonacci`** | $F_i = F_{i-1} + F_{i-2} $ | `#register-loop` `#fast-arithmetic` | [🔍](#fibonacci-fe) |
+| **`FibonacciRecursive`** | $F_i = F_{i-1} + F_{i-2}$ | `#stack-depth` `#recursion-cost` | [🔍](#fibonaccirecursive-ff) |
 
 ---
 
@@ -198,15 +198,22 @@ func Add(a, b int64) int64 {
 
 ### ComputeSequence (F=B)
 
-* **Mathematical Model**:
+* **Mathematical Model**:   
+<center>
+
   $$
-  U_n = U_0 + \sum_{i=0}^{n-1} b
+  \begin{cases}
+  U_{n+1} &= U_n + b \\
+  U_0 &= a
+  \end{cases}
   $$
+
+</center>
 * **System Target**: Designed to trap the compiler. We measure the ability of LLVM (via TinyGo) to analyze loop induction invariants (Scalar Evolution - SCEV) and eliminate the loop entirely, replacing it with a constant-time $O(1)$ multiplication and addition.
 * **Go Source Code**:
 ```go
-func ComputeSequence(u0, b, n int64) int64 {
-    curr := u0
+func ComputeSequence(a, b, n int64) int64 {
+    curr := a
     for i := int64(0); i < n; i++ {
         curr = Add(curr, b)
     }
@@ -219,8 +226,8 @@ func ComputeSequence(u0, b, n int64) int64 {
 === "Pure"
     * **Nomenclature Alias**: `H1B2`
     ```javascript
-    export function jsComputeSequence(u0, b, n) {
-      let curr = BigInt(u0);
+    export function jsComputeSequence(a, b, n) {
+      let curr = BigInt(a);
       const step = BigInt(b);
       const count = BigInt(n);
       for (let i = 0n; i < count; i++) {
@@ -437,9 +444,13 @@ func ConcurrentCountPrimes(limit int64, numWorkers int) int64 {
 ### Fibonacci (F=E)
 
 * **Mathematical Model**:
+<center>
+
   $$
-  F_0 = 0, \quad F_1 = 1, \quad F_i = F_{i-1} + F_{i-2} \quad \text{(resolved in } O(N) \text{ iterations)}
+  F_i = \begin{cases} 0 & \text{if } i = 0 \\ 1 & \text{if } i = 1 \\ F_{i-1} + F_{i-2} & \text{if } i > 1 \end{cases} \quad \text{(resolved iteratively in } O(N) \text{ steps)}
   $$
+
+</center>
 * **System Target**: Measures the raw speed of register operations and simple arithmetic loop jumps inside the WASM linear memory space.
 * **Go Source Code**:
 ```go
@@ -513,9 +524,18 @@ func Fibonacci(n int64) int64 {
 ### FibonacciRecursive (F=F)
 
 * **Mathematical Model**:
+<center>
+
   $$
-  F_n = \begin{cases} 0 & \text{if } n \le 0 \\ 1 & \text{if } n = 1 \\ F_{n-1} + F_{n-2} & \text{if } n > 1 \end{cases}
+  F_n = 
+    \begin{cases} 
+    0 & \text{if } n \le 0 \\
+    1 & \text{if } n = 1 \\
+    F_{n-1} + F_{n-2} & \text{if } n > 1
+    \end{cases}
   $$
+
+</center>
 * **System Target**: Spawns an exponential call tree (over 92 million recursive function calls for $N=35$). It stresses the WebAssembly call stack depth and measures function frame pushing and popping overhead.
 * **Go Source Code**:
 ```go

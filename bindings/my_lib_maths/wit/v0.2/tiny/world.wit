@@ -1,0 +1,12 @@
+package ouvrage:lab-wasi-demo;
+
+world wasi-maths-reference {
+    export add: func(a: s64, b: s64) -> s64;
+    export compute-sequence: func(u0: s64, b: s64, n: s64) -> s64;
+    export is-prime: func(n: s64) -> bool;
+    export count-primes: func(limit: s64, start: s64) -> s64;
+    export find-last-prime: func(limit: s64) -> s64;
+    export concurrent-count-primes: func(limit: s64, workers: s32) -> s64;
+    export fibonacci: func(n: s64) -> s64;
+    export fibonacci-recursive: func(n: s64) -> s64;
+}

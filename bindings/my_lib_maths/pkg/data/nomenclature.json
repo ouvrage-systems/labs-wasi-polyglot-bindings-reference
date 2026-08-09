@@ -1,30 +1,191 @@
 {
-  "toolchains": {
-    "A": { "name": "WASM v0 TinyGo (none)", "target": "v0-tiny", "options": "-scheduler=none" },
-    "B": { "name": "WASM v0 TinyGo (asyncify)", "target": "v0-tiny", "options": "-scheduler=asyncify" },
-    "C": { "name": "WASM v0 Legacy (Standard Go)", "target": "v0-legacy", "options": "syscall/js" },
-    "D": { "name": "WASI v1 TinyGo", "target": "v1-tiny", "options": "" },
-    "E": { "name": "WASI v1 Standard Go", "target": "v1-standard", "options": "" },
-    "F": { "name": "WASI v2 TinyGo Component", "target": "v2-tiny", "options": "WIT Canonical ABI" },
-    "G": { "name": "WASI v2 Standard Go Component", "target": "v2-standard", "options": "WIT Canonical ABI" },
-    "H": { "name": "Pure Host Native", "target": "pure", "options": "No WebAssembly" }
+  "versions": {
+    "0": "WASM v0 MVP",
+    "0.1": "WASI v0.1 Preview 1",
+    "1": "WASI v1 Standard",
+    "0.2": "WASI v0.2 Component",
+    "host": "Host Native"
   },
+  "compilers": {
+    "tinygo": "TinyGo",
+    "go": "Standard Go",
+    "native": "JS V8 Engine"
+  },
+  "schedulers": {
+    "none": "none",
+    "asyncify": "asyncify",
+    "tasks": "tasks",
+    "native": "native",
+    "rpc": "RPC Subprocess",
+    "direct": "Direct Exports",
+    "stdgo": "Standard Go"
+  },
+  "targets": [
+    { "code": "A", "version": "0", "compiler": "tinygo", "scheduler": "none", "binary": "my_lib_maths_v0_tiny.wasm", "loader": "v0-tiny" },
+    { "code": "B", "version": "0", "compiler": "tinygo", "scheduler": "asyncify", "binary": "my_lib_maths_v0_tiny_asyncify.wasm", "loader": "v0-tiny" },
+    { "code": "C", "version": "0", "compiler": "go", "scheduler": "native", "binary": "my_lib_maths_v0_legacy.wasm", "loader": "v0-legacy" },
+    { "code": "D", "version": "0.1", "compiler": "tinygo", "scheduler": "none", "binary": "my_lib_maths_v0.1_tiny.wasm", "loader": "v0.1-wasi" },
+    { "code": "E", "version": "0.1", "compiler": "tinygo", "scheduler": "asyncify", "binary": "my_lib_maths_v0.1_tiny_asyncify.wasm", "loader": "v0.1-wasi" },
+    { "code": "F", "version": "0.1", "compiler": "go", "scheduler": "rpc", "binary": "my_lib_maths_v0.1_legacy_rpc.wasm", "loader": "v0.1-legacy" },
+    { "code": "I", "version": "0.1", "compiler": "go", "scheduler": "direct", "binary": "my_lib_maths_v0.1_legacy.wasm", "loader": "v0.1-wasi" },
+    { "code": "G", "version": "0.2", "compiler": "tinygo", "scheduler": "none", "binary": "my_lib_maths_v0.2_tiny.wasm", "loader": "v0.2-tiny" },
+    { "code": "J", "version": "0.2", "compiler": "tinygo", "scheduler": "asyncify", "binary": "my_lib_maths_v0.2_tiny_asyncify.wasm", "loader": "v0.2-tiny" },
+    { "code": "K", "version": "0.2", "compiler": "go", "scheduler": "stdgo", "binary": "my_lib_maths_v0.2_stdgo.wasm", "loader": "v0.2-stdgo" },
+    { "code": "H", "version": "host", "compiler": "native", "scheduler": "native", "binary": "maths_native.js", "loader": "native" }
+  ],
   "languages": {
-    "1": { "name": "JavaScript (Browser / Node.js)" },
-    "2": { "name": "Python" }
+    "1": "JavaScript (Browser / Node.js)",
+    "2": "Python"
   },
   "functions": {
-    "A": { "name": "Add", "focus": "FFI Overhead & Latency" },
-    "B": { "name": "ComputeSequence", "focus": "Loop Induction & SCEV" },
-    "C": { "name": "FindLastPrime", "focus": "Raw CPU-bound Trial Division" },
-    "D": { "name": "ConcurrentCountPrimes", "focus": "Concurrency Scheduling" },
-    "E": { "name": "Fibonacci", "focus": "Register & Simple Arithmetic Loop" },
-    "F": { "name": "FibonacciRecursive", "focus": "Call Stack Depth Pressure" }
+    "A": {
+      "name": "Add",
+      "focus": "FFI Overhead & Latency",
+      "method": "add",
+      "async": false,
+      "signature": ["A", "B"],
+      "inputs": {
+        "A": { "label": "Operand A", "disable": false, "default": 10 },
+        "B": { "label": "Operand B", "disable": false, "default": 20 },
+        "C": { "label": "Unused", "disable": true, "default": 0 }
+      },
+      "methods": {
+        "1": { "target": "driver", "name": "add" },
+        "2": { "target": "native", "name": "jsAdd" },
+        "4": { "target": "driver", "name": "addCold" }
+      },
+      "verify": "jsAdd",
+      "math": {
+        "expression": "A + B",
+        "mapping": "A = Operand A, B = Operand B",
+        "explanation": "Performs binary addition of two 64-bit integers."
+      }
+    },
+    "B": {
+      "name": "ComputeSequence",
+      "focus": "Loop Induction & SCEV",
+      "method": "computeSequence",
+      "async": false,
+      "signature": ["A", "B", "C"],
+      "inputs": {
+        "A": { "label": "Initial Term U₀", "disable": false, "default": 10 },
+        "B": { "label": "Difference B", "disable": false, "default": 2 },
+        "C": { "label": "Iterations C", "disable": false, "default": 10000 }
+      },
+      "methods": {
+        "1": { "target": "driver", "name": "computeSequence" },
+        "2": { "target": "native", "name": "jsComputeSequence" },
+        "3": { "target": "jswasm", "name": "jswasmComputeSequence" },
+        "4": { "target": "jswasm", "name": "jswasmComputeSequence" }
+      },
+      "verify": "jsComputeSequence",
+      "math": {
+        "expression": "Uₙ = Uₙ₋₁ + B, where U₀ = A, for n ∈ [1..C]",
+        "mapping": "A = U₀ (initial term), B = d (difference), C = N (iterations)",
+        "explanation": "Computes the N-th term of an arithmetic sequence iteratively or recursively."
+      }
+    },
+    "C": {
+      "name": "FindLastPrime",
+      "focus": "Raw CPU-bound Trial Division",
+      "method": "findLastPrime",
+      "async": false,
+      "signature": ["C"],
+      "inputs": {
+        "A": { "label": "Unused", "disable": true, "default": 0 },
+        "B": { "label": "Unused", "disable": true, "default": 0 },
+        "C": { "label": "Search Limit C", "disable": false, "default": 10000 }
+      },
+      "methods": {
+        "1": { "target": "driver", "name": "findLastPrime" },
+        "2": { "target": "native", "name": "jsFindLastPrime" },
+        "3": { "target": "jswasm", "name": "jswasmFindLastPrime" },
+        "4": { "target": "jswasm", "name": "jswasmFindLastPrime" }
+      },
+      "verify": "jsFindLastPrime",
+      "math": {
+        "expression": "max(p) where p ≤ C is prime",
+        "mapping": "C = limit",
+        "explanation": "Finds the largest prime number less than or equal to C using trial division."
+      }
+    },
+    "D": {
+      "name": "ConcurrentCountPrimes",
+      "focus": "Concurrency Scheduling",
+      "method": "concurrentCountPrimes",
+      "async": true,
+      "signature": ["C", "A"],
+      "inputs": {
+        "A": { "label": "Worker Count K", "disable": false, "default": 4 },
+        "B": { "label": "Unused", "disable": true, "default": 0 },
+        "C": { "label": "Search Limit C", "disable": false, "default": 10000 }
+      },
+      "methods": {
+        "1": { "target": "driver", "name": "concurrentCountPrimes" },
+        "2": { "target": "native", "name": "jsConcurrentCountPrimes" },
+        "3": { "target": "jswasm", "name": "jswasmConcurrentCountPrimes" },
+        "4": { "target": "jswasm", "name": "jswasmConcurrentCountPrimes" }
+      },
+      "verify": "jsConcurrentCountPrimes",
+      "math": {
+        "expression": "count(p) where p ∈ [2..C] is prime",
+        "mapping": "A = workers (concurrency level), C = limit",
+        "explanation": "Counts prime numbers concurrently up to C by partitioning the range across A workers."
+      }
+    },
+    "E": {
+      "name": "Fibonacci",
+      "focus": "Register & Simple Arithmetic Loop",
+      "method": "fibonacci",
+      "async": false,
+      "signature": ["C"],
+      "inputs": {
+        "A": { "label": "Unused", "disable": true, "default": 0 },
+        "B": { "label": "Unused", "disable": true, "default": 0 },
+        "C": { "label": "Term N", "disable": false, "default": 40 }
+      },
+      "methods": {
+        "1": { "target": "driver", "name": "fibonacci" },
+        "2": { "target": "native", "name": "jsFibonacciIterative" },
+        "3": { "target": "jswasm", "name": "jswasmFibonacci" },
+        "4": { "target": "jswasm", "name": "jswasmFibonacci" }
+      },
+      "verify": "jsFibonacciIterative",
+      "math": {
+        "expression": "F(C) where F(n) = F(n-1) + F(n-2), F(0)=0, F(1)=1",
+        "mapping": "C = N (term number)",
+        "explanation": "Computes the N-th Fibonacci term iteratively using local registers."
+      }
+    },
+    "F": {
+      "name": "FibonacciRecursive",
+      "focus": "Call Stack Depth Pressure",
+      "method": "fibonacciRecursive",
+      "async": false,
+      "signature": ["C"],
+      "inputs": {
+        "A": { "label": "Unused", "disable": true, "default": 0 },
+        "B": { "label": "Unused", "disable": true, "default": 0 },
+        "C": { "label": "Recursive Term N", "disable": false, "default": 25 }
+      },
+      "methods": {
+        "1": { "target": "driver", "name": "fibonacciRecursive" },
+        "2": { "target": "native", "name": "jsFibonacciRecursive" },
+        "3": { "target": "jswasm", "name": "jswasmFibonacciRecursive" },
+        "4": { "target": "jswasm", "name": "jswasmFibonacciRecursive" }
+      },
+      "verify": "jsFibonacciRecursive",
+      "math": {
+        "expression": "F(C) where F(n) = F(n-1) + F(n-2), F(0)=0, F(1)=1",
+        "mapping": "C = N (term number)",
+        "explanation": "Computes the N-th Fibonacci term recursively, exerting call stack depth pressure."
+      }
+    }
   },
   "modes": {
-    "1": { "name": "WASM Internal", "desc": "Single FFI call executing entire loop in guest" },
-    "2": { "name": "Pure Host JIT/Interpreter", "desc": "No WebAssembly involved" },
-    "3": { "name": "N Calls WASM (Cached Instance)", "desc": "Host loop driving warm guest FFI" },
-    "4": { "name": "N Calls WASM (Cold Re-Instantiation)", "desc": "Host loop compiling guest every iteration" }
+    "1": { "name": "Pure WASM", "desc": "Single FFI call executing entire workload in guest Go" },
+    "2": { "name": "Pure Host JS Native", "desc": "Single call executing entire workload in JIT JS" },
+    "3": { "name": "WASM Cached", "desc": "JS-driven Loop/Scheduling calling cached WASM primitive" },
+    "4": { "name": "WASM Cold", "desc": "JS-driven Loop/Scheduling calling cold WASM primitive" }
   }
 }

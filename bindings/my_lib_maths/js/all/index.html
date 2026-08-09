@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ouvrage Systems - Unified Metrology Laboratory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "@bytecodealliance/preview2-shim/cli": "https://esm.sh/@bytecodealliance/preview2-shim@0.19.0/cli",
+        "@bytecodealliance/preview2-shim/clocks": "https://esm.sh/@bytecodealliance/preview2-shim@0.19.0/clocks",
+        "@bytecodealliance/preview2-shim/filesystem": "https://esm.sh/@bytecodealliance/preview2-shim@0.19.0/filesystem",
+        "@bytecodealliance/preview2-shim/io": "https://esm.sh/@bytecodealliance/preview2-shim@0.19.0/io",
+        "@bytecodealliance/preview2-shim/random": "https://esm.sh/@bytecodealliance/preview2-shim@0.19.0/random"
+      }
+    }
+    </script>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-panel: rgba(16, 22, 37, 0.65);
+            --bg-panel-hover: rgba(22, 30, 50, 0.85);
+            --border-primary: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(59, 130, 246, 0.3);
+            
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            
+            --accent-blue: #3b82f6;
+            --accent-emerald: #10b981;
+            --accent-ruby: #ef4444;
+            --accent-amber: #f59e0b;
+            
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            padding: 2.5rem;
+            min-height: 100vh;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-primary);
+            padding-bottom: 1.5rem;
+        }
+
+        .title-group h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #fff 30%, var(--accent-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-group p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.75rem;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--accent-blue);
+            box-shadow: 0 0 8px var(--accent-blue);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        select, input {
+            background: rgba(10, 14, 23, 0.8);
+            border: 1px solid var(--border-primary);
+            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 0.65rem 0.8rem;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px var(--border-glow);
+        }
+
+        input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .config-row-secondary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .btn-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        button {
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2563eb;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-ruby);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: var(--accent-ruby);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-primary);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--text-muted);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            box-shadow: none !important;
+        }
+
+        .progress-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .progress-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.05);
+            height: 4px;
+            border-radius: 9999px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .progress-bar-fill {
+            background: var(--accent-blue);
+            height: 100%;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-primary);
+            padding-top: 1rem;
+        }
+
+        .badge-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        .table-panel {
+            min-height: 450px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+            color: #fff;
+        }
+
+        .table-panel-scroll {
+            overflow-x: auto;
+            max-height: 480px;
+            border-radius: 8px;
+            border: 1px solid var(--border-primary);
+        }
+
+        .mono {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .status-pass {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-fail {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-ruby);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status-warn {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .explanation {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-primary);
+            padding-top: 1rem;
+            line-height: 1.6;
+        }
+
+        .explanation code {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="title-group">
+        <h1>Ouvrage-Labs wasm - Unified Metrology Laboratory</h1>
+        <p>
+            Workspace: <code>js/all</code> 
+            <span class="status-pill"><span class="status-dot"></span>Decoupled Matrix Architecture</span>
+        </p>
+    </div>
+</header>
+
+<div class="grid-container">
+    <!-- Config Column -->
+    <div class="glass-panel">
+        <div class="panel-header">
+            <h2>⚙️ Metrology Settings</h2>
+        </div>
+
+        <!-- Row 1: Selects -->
+        <div class="form-group">
+            <label for="toolchainSelect">Runtime Driver / Compiler</label>
+            <select id="toolchainSelect">
+                <option value="A">WASM v0 TinyGo (none) [A]</option>
+                <option value="B">WASM v0 TinyGo (asyncify) [B]</option>
+                <option value="C">WASM v0 Legacy (Standard Go) [C]</option>
+                <option value="D">WASI v0.1 TinyGo (none) [D]</option>
+                <option value="E">WASI v0.1 TinyGo (asyncify) [E]</option>
+                <option value="F">WASI v0.1 Standard Go (native) [F]</option>
+                <option value="I">WASI v0.1 Standard Go (direct) [I]</option>
+                <option value="G">WASI v0.2 TinyGo Component (none) [G]</option>
+                <option value="J">WASI v0.2 TinyGo Component (asyncify) [J]</option>
+                <option value="K">WASI v0.2 Standard Go Component [K]</option>
+                <option value="H">Pure Host Native [H]</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="opSelect">Workload Operation</label>
+            <select id="opSelect">
+                <option value="A">Add</option>
+                <option value="B">ComputeSequence</option>
+                <option value="C">FindLastPrime</option>
+                <option value="D">ConcurrentCountPrimes</option>
+                <option value="E">Fibonacci</option>
+                <option value="F">FibonacciRecursive</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="modeSelect">Execution Mode</label>
+            <select id="modeSelect">
+                <option value="5">Mode 5: WASM (Fresh Instance per Run)</option>
+                <option value="3">Mode 3: WASM Cached (Globally Cached Instance)</option>
+                <option value="4">Mode 4: WASM Cold (Re-Instantiate every iteration)</option>
+            </select>
+        </div>
+
+        <!-- Row 2: Parameters -->
+        <div id="mathContextPanel" style="margin-top: 1rem; margin-bottom: 1rem; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; font-size: 0.8rem; border-left: 3px solid var(--accent-primary);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <span style="font-weight: 600; color: var(--accent-primary); font-size: 0.85rem;">📐 Math Expression:</span>
+                <code id="mathExpression" style="font-family: monospace; color: var(--accent-primary); font-size: 0.85rem; background: rgba(255,255,255,0.05); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">A + B</code>
+            </div>
+            <div style="margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.75rem;">
+                <span style="font-weight: 500; color: var(--text-primary);">Mapping:</span> <span id="mathMapping" style="font-family: monospace; font-size: 0.75rem;">A = Operand A, B = Operand B</span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.3;">
+                <span id="mathExplanation">Performs binary addition of two 64-bit integers.</span>
+            </div>
+        </div>
+        <div class="config-row-secondary">
+            <div class="form-group">
+                <label for="valA">A</label>
+                <input type="number" id="valA" value="10">
+            </div>
+
+            <div class="form-group">
+                <label for="valB">B</label>
+                <input type="number" id="valB" value="20">
+            </div>
+
+            <div class="form-group">
+                <label for="valC">C</label>
+                <input type="number" id="valC" value="10000">
+            </div>
+        </div>
+
+        <!-- Trigger Controls -->
+        <div class="btn-container">
+            <button class="btn-primary" id="runBenchBtn">Execute Workload</button>
+            <button class="btn-danger" id="cancelBenchBtn" disabled>🛑 Cancel</button>
+        </div>
+
+        <!-- Progress Box -->
+        <div class="progress-box" id="progressBox">
+            <div class="progress-text" id="progressText">Starting...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+        </div>
+
+        <!-- Metadata Badges -->
+        <div class="info-row">
+            <div class="badge-container">
+                <div class="badge" id="wasmSizeBadge">WASM size: N/A</div>
+                <div class="badge" id="wasmFetchBadge">Fetch: N/A</div>
+                <div class="badge" id="wasmCompileBadge">Compile: N/A</div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <strong>Matrix Metrology Features:</strong><br/>
+            • <strong>SSOT Nomenclature:</strong> Completely driven by <code>nomenclature.json</code> shared file.<br/>
+            • <strong>Unified Executor:</strong> Dashboard runs the benchmark loops using the decoupled <code>lab_matrix.js</code>.
+        </div>
+    </div>
+
+    <!-- Results Table Column -->
+    <div class="glass-panel table-panel">
+        <div class="panel-header">
+            <h2>📊 Metrology History Log</h2>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; font-weight: 500;" id="exportJsonBtn">Export JSON</button>
+                <button class="btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; font-weight: 500;" id="exportCsvBtn">Export CSV</button>
+                <button class="btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; font-weight: 500;" id="clearTableBtn">Clear Log</button>
+            </div>
+        </div>
+
+        <div class="table-panel-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nomenclature Tag</th>
+                        <th>Target</th>
+                        <th>Function</th>
+                        <th>Execution Mode</th>
+                        <th>Parameters</th>
+                        <th>Duration</th>
+                        <th>Avg (FFI)</th>
+                        <th>Result</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                            No test records. Configure setting inputs and click <strong>Execute Workload</strong>.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { getMathsImplementation } from './driver_manager.js';
+    import { BrowserAdapter } from './adapters/browser_adapter.js';
+    import { initMatrix, runWorkload, getInputDescriptor, getToolchainName, getFunctionName, getModeName, getPrimitive, getMethods, getMathMetadata, parseSeed, generateSeed } from './lab_matrix.js';
+
+    // Initialize nomenclature matrix
+    await initMatrix(new BrowserAdapter());
+
+    const toolchainSelect = document.getElementById('toolchainSelect');
+    const opSelect = document.getElementById('opSelect');
+    const modeSelect = document.getElementById('modeSelect');
+    const valAInput = document.getElementById('valA');
+    const valBInput = document.getElementById('valB');
+    const valCInput = document.getElementById('valC');
+    const mathExpression = document.getElementById('mathExpression');
+    const mathMapping = document.getElementById('mathMapping');
+    const mathExplanation = document.getElementById('mathExplanation');
+    
+    const runBenchBtn = document.getElementById('runBenchBtn');
+    const cancelBenchBtn = document.getElementById('cancelBenchBtn');
+    const clearTableBtn = document.getElementById('clearTableBtn');
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const historyTableBody = document.getElementById('historyTableBody');
+    
+    const wasmSizeBadge = document.getElementById('wasmSizeBadge');
+    const wasmFetchBadge = document.getElementById('wasmFetchBadge');
+    const wasmCompileBadge = document.getElementById('wasmCompileBadge');
+    
+    const progressBox = document.getElementById('progressBox');
+    const progressText = document.getElementById('progressText');
+    const progressBarFill = document.getElementById('progressBarFill');
+
+    let runCounter = 0;
+    let isHistoryEmpty = true;
+    let cancelRequested = false;
+    const runRecords = [];
+
+    // Dynamically update form labels and inputs based on nomenclature descriptor
+    function updateContextLabels() {
+        const op = opSelect.value;
+        const toolchain = toolchainSelect.value;
+        const desc = getInputDescriptor(op);
+        
+        const math = getMathMetadata(op);
+        mathExpression.innerText = math.expression;
+        mathMapping.innerText = math.mapping;
+        mathExplanation.innerText = math.explanation;
+        
+        valAInput.disabled = desc.disableA;
+        valBInput.disabled = desc.disableB;
+        valCInput.disabled = desc.disableC;
+        
+        valAInput.value = desc.defaultA;
+        valBInput.value = desc.defaultB;
+        valCInput.value = desc.defaultC;
+
+        const prevMode = modeSelect.value;
+        modeSelect.innerHTML = '';
+        const methods = getMethods(op);
+
+        if (toolchain === 'H') {
+            modeSelect.innerHTML = `
+                <option value="2">Mode 2: Pure Host JS Native</option>
+            `;
+        } else if (methods) {
+            if (methods["1"]) {
+                modeSelect.innerHTML += `
+                    <option value="1">Mode 1: Pure WASM (Go/WASM-driven Execution)</option>
+                `;
+            }
+            if (methods["3"]) {
+                modeSelect.innerHTML += `
+                    <option value="3">Mode 3: WASM Cached (JS-driven Loop/Scheduling)</option>
+                `;
+            }
+            if (methods["4"]) {
+                modeSelect.innerHTML += `
+                    <option value="4">Mode 4: WASM Cold (JS-driven Loop/Scheduling, Cold FFI)</option>
+                `;
+            }
+        }
+        if ([...modeSelect.options].some(opt => opt.value === prevMode)) {
+            modeSelect.value = prevMode;
+        }
+    }
+
+    function updateUrlHash() {
+        const hash = generateSeed(
+            toolchainSelect.value,
+            opSelect.value,
+            modeSelect.value,
+            { a: valAInput.value, b: valBInput.value, c: valCInput.value }
+        );
+        window.history.replaceState(null, null, `#${hash}`);
+    }
+
+    function loadStateFromHash() {
+        const { toolchain, op, mode, inputs } = parseSeed(window.location.hash);
+        if (!toolchain) return;
+        
+        toolchainSelect.value = toolchain;
+        opSelect.value = op;
+        updateContextLabels();
+        if (mode) modeSelect.value = mode;
+        if (inputs.a !== null) valAInput.value = inputs.a;
+        if (inputs.b !== null) valBInput.value = inputs.b;
+        if (inputs.c !== null) valCInput.value = inputs.c;
+    }
+
+    opSelect.addEventListener('change', () => { updateContextLabels(); updateUrlHash(); });
+    toolchainSelect.addEventListener('change', () => { updateContextLabels(); updateUrlHash(); });
+    modeSelect.addEventListener('change', updateUrlHash);
+    valAInput.addEventListener('input', updateUrlHash);
+    valBInput.addEventListener('input', updateUrlHash);
+    valCInput.addEventListener('input', updateUrlHash);
+
+    window.addEventListener('hashchange', loadStateFromHash);
+
+    // Initial load state resolution
+    if (window.location.hash) {
+        loadStateFromHash();
+    } else {
+        updateContextLabels();
+        updateUrlHash();
+    }
+
+    cancelBenchBtn.addEventListener('click', () => {
+        cancelRequested = true;
+        progressText.innerText = '⏹️ Cancelling run...';
+    });
+
+    function setUiLocked(locked) {
+        toolchainSelect.disabled = locked;
+        opSelect.disabled = locked;
+        modeSelect.disabled = locked;
+        
+        const desc = getInputDescriptor(opSelect.value);
+        valAInput.disabled = locked || desc.disableA;
+        valBInput.disabled = locked || desc.disableB;
+        valCInput.disabled = locked || desc.disableC;
+        
+        runBenchBtn.disabled = locked;
+        cancelBenchBtn.disabled = !locked;
+        clearTableBtn.disabled = locked;
+    }
+
+    function showProgress(text, pct = 0) {
+        progressBox.style.display = 'flex';
+        progressText.innerText = text;
+        progressBarFill.style.width = `${pct}%`;
+    }
+
+    function hideProgress() {
+        progressBox.style.display = 'none';
+        progressBarFill.style.width = '0%';
+        cancelRequested = false;
+    }
+
+    function addTableRow(tag, targetName, opName, modeName, params, duration, avgNs, result, status, toolchain, op, mode, a, b, c) {
+        if (isHistoryEmpty) {
+            historyTableBody.innerHTML = '';
+            isHistoryEmpty = false;
+        }
+
+        runCounter++;
+        let pillClass = 'status-pass';
+        if (status === 'Cancelled' || status === 'TO_VERIFY') pillClass = 'status-warn';
+        if (status.startsWith('Error') || status === 'FAILED') pillClass = 'status-fail';
+
+        let statusHtml = `<span class="status-badge ${pillClass}">${status}</span>`;
+        if (status === 'TO_VERIFY') {
+            statusHtml = `<span class="status-badge status-warn clickable-verify" style="cursor: pointer; text-decoration: underline;" title="Click to verify result via JS JIT">TO_VERIFY 🔍</span>`;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="mono">${runCounter}</td>
+            <td class="mono" style="color: var(--text-primary); font-weight: 500;">${tag}</td>
+            <td>${targetName}</td>
+            <td class="mono">${opName}</td>
+            <td>${modeName}</td>
+            <td class="mono" style="color: var(--text-muted);">${params}</td>
+            <td class="mono">${duration}</td>
+            <td class="mono">${avgNs}</td>
+            <td class="mono" style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${result}</td>
+            <td class="status-cell">${statusHtml}</td>
+            <td>
+                <div style="display: flex; gap: 0.25rem;">
+                    <button class="btn-secondary btn-load" style="font-size: 0.7rem; padding: 0.2rem 0.4rem; font-weight: 500;">Load</button>
+                    <button class="btn-secondary btn-copy" style="font-size: 0.7rem; padding: 0.2rem 0.4rem; font-weight: 500;">Copy</button>
+                </div>
+            </td>
+        `;
+
+        const verifyBtn = row.querySelector('.clickable-verify');
+        if (verifyBtn) {
+            verifyBtn.addEventListener('click', () => {
+                verifyBtn.innerText = 'Verifying... ⏳';
+                verifyBtn.style.cursor = 'default';
+                verifyBtn.style.textDecoration = 'none';
+                
+                // Spin up helper worker context exclusively for background verification task
+                const verifier = new Worker('worker.js', { type: 'module' });
+                verifier.postMessage({ type: 'verify', op, inputs: { a, b, c }, result });
+                
+                verifier.onmessage = (ev) => {
+                    const msg = ev.data;
+                    if (msg.type === 'verify_done') {
+                        verifier.terminate();
+                        if (msg.status === 'SUCCESS') {
+                            verifyBtn.className = 'status-badge status-pass';
+                            verifyBtn.innerText = 'SUCCESS';
+                        } else {
+                            verifyBtn.className = 'status-badge status-fail';
+                            verifyBtn.innerText = 'FAILED';
+                        }
+                    }
+                };
+
+                verifier.onerror = (err) => {
+                    verifier.terminate();
+                    verifyBtn.className = 'status-badge status-fail';
+                    verifyBtn.innerText = 'FAILED';
+                };
+            });
+        }
+
+        const hash = generateSeed(toolchain, op, mode, { a, b, c });
+
+        row.querySelector('.btn-load').addEventListener('click', () => {
+            window.location.hash = `#${hash}`;
+        });
+
+        row.querySelector('.btn-copy').addEventListener('click', (e) => {
+            const seedUrl = window.location.origin + window.location.pathname + `#${hash}`;
+            navigator.clipboard.writeText(seedUrl).then(() => {
+                const btn = e.target;
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.style.color = 'var(--status-pass-text)';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.color = '';
+                }, 1000);
+            });
+        });
+
+        historyTableBody.insertBefore(row, historyTableBody.firstChild);
+
+        // Store result record in memory
+        runRecords.push({
+            run: runCounter,
+            tag,
+            target: targetName,
+            operation: opName,
+            mode: modeName,
+            parameters: params,
+            durationMs: duration,
+            avgNs,
+            result,
+            status
+        });
+    }
+
+    clearTableBtn.addEventListener('click', () => {
+        historyTableBody.innerHTML = `
+            <tr>
+                <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                     No test records. Configure setting inputs and click <strong>Execute Workload</strong>.
+                </td>
+            </tr>
+        `;
+        isHistoryEmpty = true;
+        runRecords.length = 0;
+        wasmSizeBadge.innerText = 'WASM size: N/A';
+        wasmFetchBadge.innerText = 'Fetch: N/A';
+        wasmCompileBadge.innerText = 'Compile: N/A';
+    });
+
+    exportJsonBtn.addEventListener('click', () => {
+        if (runRecords.length === 0) {
+            alert("No test records to export.");
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(runRecords, null, 2));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `metrology_report_${new Date().toISOString().slice(0,10)}.json`);
+        dlAnchorElem.click();
+    });
+
+    exportCsvBtn.addEventListener('click', () => {
+        if (runRecords.length === 0) {
+            alert("No test records to export.");
+            return;
+        }
+        const headers = ["Run", "Nomenclature Tag", "Target", "Function", "Execution Mode", "Parameters", "Duration", "Avg (FFI)", "Result", "Status"];
+        const csvRows = [headers.join(",")];
+        for (const record of runRecords) {
+            const row = [
+                record.run,
+                `"${record.tag}"`,
+                `"${record.target.replace(/"/g, '""')}"`,
+                `"${record.operation}"`,
+                `"${record.mode}"`,
+                `"${record.parameters.replace(/"/g, '""')}"`,
+                `"${record.durationMs}"`,
+                `"${record.avgNs}"`,
+                `"${record.result}"`,
+                `"${record.status}"`
+            ];
+            csvRows.push(row.join(","));
+        }
+        const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvRows.join("\n"));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", csvContent);
+        dlAnchorElem.setAttribute("download", `metrology_report_${new Date().toISOString().slice(0,10)}.csv`);
+        dlAnchorElem.click();
+    });
+
+    runBenchBtn.addEventListener('click', async () => {
+        const toolchain = toolchainSelect.value;
+        const op = opSelect.value;
+        const mode = modeSelect.value;
+        
+        const a = parseInt(valAInput.value, 10) || 0;
+        const b = parseInt(valBInput.value, 10) || 0;
+        const c = parseInt(valCInput.value, 10) || 1;
+
+        setUiLocked(true);
+        showProgress('Resolving driver routing implementation...', 10);
+        
+        const runtimeLabel = getToolchainName(toolchain);
+        const functionName = getFunctionName(op);
+        const modeLabel = getModeName(mode);
+        const tag = `T${toolchain}-L1-F${op}-M${mode}`;
+        
+        const desc = getInputDescriptor(op);
+        const paramText = op === 'A' ? `A=${a}, B=${b}, C=${c}` :
+                          op === 'B' ? `U₀=${a}, d=${b}, C=${c}` :
+                          op === 'C' ? `B=${b}, C=${c}` :
+                          op === 'D' ? `Workers=${a}, Limit=${c}` :
+                          `N=${c}`;
+
+        let worker = null;
+        let cancelCheckInterval = null;
+        let elapsedTimerInterval = null;
+
+        try {
+            showProgress('Initializing WebAssembly Sandbox context...', 30);
+            
+            // Spawn background Web Worker with ES Modules type enabled
+            worker = new Worker('worker.js', { type: 'module' });
+
+            // Periodic polling to check if the user clicked the Cancel button
+            cancelCheckInterval = setInterval(() => {
+                if (cancelRequested) {
+                    clearInterval(cancelCheckInterval);
+                    if (elapsedTimerInterval) {
+                        clearInterval(elapsedTimerInterval);
+                        elapsedTimerInterval = null;
+                    }
+                    if (worker) {
+                        worker.terminate();
+                        worker = null;
+                    }
+                    hideProgress();
+                    setUiLocked(false);
+                    addTableRow(tag, runtimeLabel, functionName, modeLabel, paramText, 'Cancelled', 'N/A', 'Execution Cancelled', 'FAILED', toolchain, op, mode, a, b, c);
+                }
+            }, 100);
+
+            // Forward execution request to worker
+            worker.postMessage({ toolchain, op, mode, inputs: { a, b, c } });
+
+            worker.onmessage = (e) => {
+                const msg = e.data;
+                
+                if (msg.type === 'init_done') {
+                    const runStartTime = performance.now();
+                    elapsedTimerInterval = setInterval(() => {
+                        const elapsed = (performance.now() - runStartTime) / 1000;
+                        showProgress(`Executing computation loop... (${elapsed.toFixed(1)}s)`, 60);
+                    }, 100);
+
+                    if (toolchain !== 'H') {
+                        wasmSizeBadge.innerText = `Size: ${(msg.meta.size / 1024).toFixed(1)} KB`;
+                        wasmFetchBadge.innerText = `Fetch: ${msg.meta.fetchMs.toFixed(1)}ms`;
+                        wasmCompileBadge.innerText = `Compile: ${msg.meta.compileMs.toFixed(1)}ms`;
+                    } else {
+                        wasmSizeBadge.innerText = 'Size: N/A';
+                        wasmFetchBadge.innerText = 'Fetch: N/A';
+                        wasmCompileBadge.innerText = 'Compile: N/A';
+                    }
+                } else if (msg.type === 'stdout') {
+                    console.log(`[WASM STDOUT] ${msg.text.trim()}`);
+                } else if (msg.type === 'stderr') {
+                    console.warn(`[WASM STDERR] ${msg.text.trim()}`);
+                } else if (msg.type === 'run_done') {
+                    clearInterval(cancelCheckInterval);
+                    if (elapsedTimerInterval) {
+                        clearInterval(elapsedTimerInterval);
+                        elapsedTimerInterval = null;
+                    }
+                    if (worker) {
+                        worker.terminate();
+                        worker = null;
+                    }
+                    hideProgress();
+                    setUiLocked(false);
+                    const metrics = msg.metrics;
+                    addTableRow(tag, runtimeLabel, functionName, modeLabel, paramText, `${metrics.elapsedMs.toFixed(1)} ms`, metrics.avgNs, metrics.result, metrics.status, toolchain, op, mode, a, b, c);
+                } else if (msg.type === 'error') {
+                    clearInterval(cancelCheckInterval);
+                    if (elapsedTimerInterval) {
+                        clearInterval(elapsedTimerInterval);
+                        elapsedTimerInterval = null;
+                    }
+                    if (worker) {
+                        worker.terminate();
+                        worker = null;
+                    }
+                    hideProgress();
+                    setUiLocked(false);
+                    addTableRow(tag, runtimeLabel, functionName, modeLabel, paramText, 'Error', 'N/A', msg.error, 'FAILED', toolchain, op, mode, a, b, c);
+                }
+            };
+
+            worker.onerror = (err) => {
+                clearInterval(cancelCheckInterval);
+                if (elapsedTimerInterval) {
+                    clearInterval(elapsedTimerInterval);
+                    elapsedTimerInterval = null;
+                }
+                if (worker) {
+                    worker.terminate();
+                    worker = null;
+                }
+                hideProgress();
+                setUiLocked(false);
+                addTableRow(tag, runtimeLabel, functionName, modeLabel, paramText, 'Error', 'N/A', err.message || 'Worker Thread Error', 'FAILED', toolchain, op, mode, a, b, c);
+            };
+
+        } catch (e) {
+            if (cancelCheckInterval) clearInterval(cancelCheckInterval);
+            if (elapsedTimerInterval) clearInterval(elapsedTimerInterval);
+            if (worker) {
+                worker.terminate();
+            }
+            hideProgress();
+            setUiLocked(false);
+            console.error("Execution failed for target:", toolchain, e);
+            addTableRow(tag, runtimeLabel, functionName, modeLabel, paramText, 'Error', 'N/A', e.message, 'FAILED', toolchain, op, mode, a, b, c);
+        }
+    });
+
+</script>
+</body>
+</html>

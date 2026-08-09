@@ -20,8 +20,8 @@ func IsPrime(n int64) bool {
 }
 
 //export CountPrimes
-func CountPrimes(limit int64) int64 {
-	return maths.CountPrimes(limit)
+func CountPrimes(limit, start int64) int64 {
+	return maths.CountPrimes(limit, start)
 }
 
 //export FindLastPrime

@@ -1419,6 +1419,7 @@ class Waitable {
     #state;
     #isAsync;
     #isManualAsync;
+    #preserveFutureResult;
     #entryFnName = null;
     
     #onResolveHandlers = [];
@@ -1476,6 +1477,7 @@ class Waitable {
       this.#state = AsyncTask.State.INITIAL;
       this.#isAsync = opts?.isAsync ?? false;
       this.#isManualAsync = opts?.isManualAsync ?? false;
+      this.#preserveFutureResult = opts?.preserveFutureResult ?? false;
       this.#entryFnName = opts.entryFnName;
       
       const {
@@ -1497,7 +1499,11 @@ class Waitable {
           return;
         }
         
-        resolveCompletionPromise(results);
+        if (this.#preserveFutureResult && results instanceof FutureValue) {
+          results.resolveAsValue(resolveCompletionPromise);
+        } else {
+          resolveCompletionPromise(results);
+        }
       });
       
       const {
@@ -2190,6 +2196,7 @@ function createNewCurrentTask(args) {
     componentIdx,
     isAsync,
     isManualAsync,
+    preserveFutureResult,
     entryFnName,
     parentSubtaskID,
     callbackFnName,
@@ -2211,6 +2218,7 @@ function createNewCurrentTask(args) {
     componentIdx,
     isAsync,
     isManualAsync,
+    preserveFutureResult,
     entryFnName,
     callbackFn,
     callbackFnName,
@@ -7059,6 +7067,7 @@ function distance(arg0, arg1) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'geometryDistance',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7123,6 +7132,7 @@ function areaRectangle(arg0) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'geometryAreaRectangle',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7186,6 +7196,7 @@ function areaCircle(arg0) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'geometryAreaCircle',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7251,6 +7262,7 @@ function areaTriangle(arg0) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'geometryAreaTriangle',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7321,6 +7333,7 @@ class KvStore{
       componentIdx: 0,
       isAsync: false,
       isManualAsync: false,
+      preserveFutureResult: false,
       entryFnName: 'storeConstructorKvStore',
       getCallbackFn: () => null,
       callbackFnName: null,
@@ -7361,7 +7374,13 @@ class KvStore{
     var rsc0 = new.target === KvStore ? this : Object.create(KvStore.prototype);
     Object.defineProperty(rsc0, symbolRscHandle, { writable: true, value: handle1});
     finalizationRegistry4.register(rsc0, handle1, rsc0);
-    Object.defineProperty(rsc0, symbolDispose, { writable: true, value: emptyFunc });
+    Object.defineProperty(rsc0, symbolDispose, { writable: true, value: function () {
+      finalizationRegistry4.unregister(rsc0);
+      const handleEntry = rscTableRemove(handleTable4, handle1);
+      rsc0[symbolDispose] = emptyFunc;
+      rsc0[symbolRscHandle] = undefined;
+      
+    }});
     _debugLog('[iface="ouvrage:lab-wasi-demo/store", function="[constructor]kv-store"][Instruction::Return]', {
       funcName: '[constructor]kv-store',
       paramCount: 1,
@@ -7405,6 +7424,7 @@ KvStore.prototype.set = function set(arg1, arg2) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'storeMethodKvStoreSet',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7477,6 +7497,7 @@ KvStore.prototype.get = function get(arg1) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'storeMethodKvStoreGet',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7574,6 +7595,7 @@ KvStore.prototype.delete = function $delete(arg1) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'storeMethodKvStoreDelete',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7641,6 +7663,7 @@ function formatMessage(arg0) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'langFormatMessage',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7717,6 +7740,7 @@ function reverseString(arg0) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'langReverseString',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -7793,6 +7817,7 @@ function fetchAndFormat(arg0) {
     componentIdx: 0,
     isAsync: false,
     isManualAsync: false,
+    preserveFutureResult: false,
     entryFnName: 'networkFetchAndFormat',
     getCallbackFn: () => null,
     callbackFnName: null,
@@ -9746,3 +9771,7 @@ const store = {
 };
 
 export { geometry, lang, network, store, geometry as 'ouvrage:lab-wasi-demo/geometry', lang as 'ouvrage:lab-wasi-demo/lang', network as 'ouvrage:lab-wasi-demo/network', store as 'ouvrage:lab-wasi-demo/store',  }
+export const _util = {
+  
+}
+
