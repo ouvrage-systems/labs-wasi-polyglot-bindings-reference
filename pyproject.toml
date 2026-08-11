@@ -8,3 +8,8 @@ dependencies = []
 dev = [
     "zensical>=0.0.52",
 ]
+
+[tool.uv.workspace]
+members = [
+    "bindings/py/all",
+]
